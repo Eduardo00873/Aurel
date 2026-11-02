@@ -91,7 +91,7 @@ struct GeneralTab: View {
         SettingsSection("Data") {
             SettingsRow(
                 "Reset All Settings",
-                description: "Clear all volumes, EQ, and device routings"
+                description: "Clear all volumes and device routings"
             ) {
                 Button(role: .destructive) {
                     showResetConfirmation = true

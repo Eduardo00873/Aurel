@@ -28,19 +28,6 @@ struct DeviceRow: View {
     let onVolumeChange: (Float) -> Void
     let onMuteToggle: () -> Void
 
-    // AutoEQ (all optional — existing call sites work without them)
-    let autoEQProfileName: String?
-    let autoEQEnabled: Bool
-    let onAutoEQToggle: ((Bool) -> Void)?
-    let autoEQProfileManager: AutoEQProfileManager?
-    let autoEQSelection: AutoEQSelection?
-    let autoEQFavoriteIDs: Set<String>
-    let onAutoEQSelect: ((AutoEQProfile?) -> Void)?
-    let onAutoEQImport: (() -> Void)?
-    let onAutoEQToggleFavorite: ((String) -> Void)?
-    let autoEQImportError: String?
-    let autoEQPreampEnabled: Bool
-    let onAutoEQPreampToggle: (() -> Void)?
     let isFocused: Bool
     let iconOverrideSymbol: String?
 
@@ -81,18 +68,6 @@ struct DeviceRow: View {
         onSetDefault: @escaping () -> Void,
         onVolumeChange: @escaping (Float) -> Void,
         onMuteToggle: @escaping () -> Void,
-        autoEQProfileName: String? = nil,
-        autoEQEnabled: Bool = false,
-        onAutoEQToggle: ((Bool) -> Void)? = nil,
-        autoEQProfileManager: AutoEQProfileManager? = nil,
-        autoEQSelection: AutoEQSelection? = nil,
-        autoEQFavoriteIDs: Set<String> = [],
-        onAutoEQSelect: ((AutoEQProfile?) -> Void)? = nil,
-        onAutoEQImport: (() -> Void)? = nil,
-        onAutoEQToggleFavorite: ((String) -> Void)? = nil,
-        autoEQImportError: String? = nil,
-        autoEQPreampEnabled: Bool = true,
-        onAutoEQPreampToggle: (() -> Void)? = nil,
         isFocused: Bool = false,
         iconOverrideSymbol: String? = nil
     ) {
@@ -104,18 +79,6 @@ struct DeviceRow: View {
         self.onSetDefault = onSetDefault
         self.onVolumeChange = onVolumeChange
         self.onMuteToggle = onMuteToggle
-        self.autoEQProfileName = autoEQProfileName
-        self.autoEQEnabled = autoEQEnabled
-        self.onAutoEQToggle = onAutoEQToggle
-        self.autoEQProfileManager = autoEQProfileManager
-        self.autoEQSelection = autoEQSelection
-        self.autoEQFavoriteIDs = autoEQFavoriteIDs
-        self.onAutoEQSelect = onAutoEQSelect
-        self.onAutoEQImport = onAutoEQImport
-        self.onAutoEQToggleFavorite = onAutoEQToggleFavorite
-        self.autoEQImportError = autoEQImportError
-        self.autoEQPreampEnabled = autoEQPreampEnabled
-        self.onAutoEQPreampToggle = onAutoEQPreampToggle
         self.isFocused = isFocused
         self.iconOverrideSymbol = iconOverrideSymbol
         self._sliderValue = State(initialValue: Self.volumeToSlider(volume, backend: volumeBackend))
@@ -126,7 +89,7 @@ struct DeviceRow: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 // Whole-row tap sets this device as default. Inner controls
-                // (volume slider, mute button, AutoEQ picker, percent field)
+                // (volume slider, mute button, percent field)
                 // are Button/Slider/TextField subviews that capture their
                 // own gestures, so they do not propagate to this handler.
                 // Mirrors the macOS Sound submenu pattern.
@@ -147,7 +110,7 @@ struct DeviceRow: View {
             // handles tap-to-set-default.
             DeviceBadge(icon: displayIcon, isSelected: isDefault)
 
-            // Device name + optional AutoEQ profile subtitle + AutoEQ picker
+            // Device name
             HStack(spacing: DesignTokens.Spacing.xs) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(device.name)
@@ -155,36 +118,10 @@ struct DeviceRow: View {
                         .lineLimit(1)
                         .help(device.name)
 
-                    if let subtitle = Self.autoEQSubtitle(profileName: autoEQProfileName, isEnabled: autoEQEnabled) {
-                        Text(subtitle)
-                            .font(.system(size: 9))
-                            .foregroundStyle(DesignTokens.Colors.textTertiary)
-                            .lineLimit(1)
-                    }
                 }
 
                 Spacer(minLength: 0)
 
-                // AutoEQ picker inside the name area so slider length stays consistent
-                if device.supportsAutoEQ,
-                   let profileManager = autoEQProfileManager,
-                   let onSelect = onAutoEQSelect,
-                   let onImport = onAutoEQImport {
-                    AutoEQPicker(
-                        profileManager: profileManager,
-                        profileName: autoEQProfileName,
-                        selection: autoEQSelection,
-                        favoriteIDs: autoEQFavoriteIDs,
-                        onSelect: onSelect,
-                        onImport: onImport,
-                        onToggleFavorite: { id in onAutoEQToggleFavorite?(id) },
-                        importError: autoEQImportError,
-                        isCorrectionEnabled: autoEQEnabled,
-                        onCorrectionToggle: onAutoEQToggle,
-                        preampEnabled: autoEQPreampEnabled,
-                        onPreampToggle: onAutoEQPreampToggle
-                    )
-                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -264,12 +201,6 @@ extension DeviceRow {
         VolumeMapping.systemGain(forSliderFraction: slider, tier: backend)
     }
 
-    // MARK: - Subtitle
-
-    static func autoEQSubtitle(profileName: String?, isEnabled: Bool) -> String? {
-        guard let profileName else { return nil }
-        return isEnabled ? profileName : "\(profileName) (off)"
-    }
 }
 
 // MARK: - Previews
