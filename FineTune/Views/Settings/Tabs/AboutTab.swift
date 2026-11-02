@@ -28,12 +28,16 @@ struct AboutTab: View {
                     .interpolation(.high)
                     .frame(width: 96, height: 96)
 
-                Text("FineTune")
+                Text("EduTune")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(DesignTokens.Colors.textPrimary)
 
                 Text("Version \(versionShort) (\(buildNumber))")
                     .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+
+                Text("Based on FineTune by Ronit Singh")
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
 
@@ -41,15 +45,7 @@ struct AboutTab: View {
 
             HStack(spacing: 8) {
                 AboutLinkChip(
-                    label: "Donate",
-                    icon: "heart.fill",
-                    hoverIcon: "heart.fill",
-                    hoverColor: .pink,
-                    url: DesignTokens.Links.support,
-                    isPrimary: true
-                )
-                AboutLinkChip(
-                    label: "Star on GitHub",
+                    label: "FineTune on GitHub",
                     icon: "star",
                     hoverIcon: "star.fill",
                     hoverColor: .yellow,
@@ -65,16 +61,19 @@ struct AboutTab: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 6) {
-            Button {
-                NSWorkspace.shared.open(DesignTokens.Links.license)
-            } label: {
-                Text("GPL-3.0")
-            }
-            .buttonStyle(.plain)
+        VStack(spacing: 2) {
+            HStack(spacing: 6) {
+                Button {
+                    NSWorkspace.shared.open(DesignTokens.Links.license)
+                } label: {
+                    Text("GPL-3.0")
+                }
+                .buttonStyle(.plain)
 
-            Text("·")
-            Text("© \(yearText) Ronit Singh")
+                Text("·")
+                Text("FineTune © \(yearText) Ronit Singh")
+            }
+            Text("EduTune modifications © \(yearText) Eduardo Carvalho")
         }
         .font(.system(size: 10))
         .foregroundStyle(.tertiary)

@@ -8,7 +8,7 @@ nonisolated final class AutoEQProfileLoader {
 
     private var importDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("FineTune")
+            .appendingPathComponent("EduTune")
             .appendingPathComponent("AutoEQ")
     }
 

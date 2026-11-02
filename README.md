@@ -1,3 +1,7 @@
+> **EduTune** — this repository is EduTune, a modified version of [FineTune](https://github.com/ronitsingh10/FineTune) by Ronit Singh.
+> FineTune © 2026 Ronit Singh · EduTune modifications © 2026 Eduardo Carvalho · GPL-3.0.
+> See [NOTICE.md](NOTICE.md) for details. The original FineTune README follows unchanged.
+
 <img src="assets/icon.png" width="170" height="170" alt="FineTune app icon" align="left"/>
 
 <h3>FineTune</h3>

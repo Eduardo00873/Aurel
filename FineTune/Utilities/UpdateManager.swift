@@ -19,8 +19,8 @@ final class UpdateManager: NSObject, ObservableObject {
         )
         super.init()
 
-        // Start updater to enable manual checks, but don't trigger auto-check UI
-        try? updaterController.updater.start()
+        // EduTune: the updater is never started, so Sparkle performs no checks
+        // (automatic or manual). FineTune's feed URL and key were removed from Info.plist.
 
         // Observe when updates can be checked
         updaterController.updater.publisher(for: \.canCheckForUpdates)

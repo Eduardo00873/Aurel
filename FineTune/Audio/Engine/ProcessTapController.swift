@@ -602,7 +602,7 @@ final class ProcessTapController: ProcessTapControlling {
         let description = buildAggregateDescription(
             outputUIDs: targetDeviceUIDs,
             tapUUID: tapDesc.uuid,
-            name: "FineTune-\(app.id)"
+            name: "EduTune-\(app.id)"
         )
 
         var err: OSStatus
@@ -977,7 +977,7 @@ final class ProcessTapController: ProcessTapControlling {
         let description = buildAggregateDescription(
             outputUIDs: outputUIDs,
             tapUUID: tapDesc.uuid,
-            name: "FineTune-\(app.id)-secondary"
+            name: "EduTune-\(app.id)-secondary"
         )
 
         var err: OSStatus
@@ -1191,7 +1191,7 @@ final class ProcessTapController: ProcessTapControlling {
         let description = buildAggregateDescription(
             outputUIDs: outputUIDs,
             tapUUID: newTapDesc.uuid,
-            name: "FineTune-\(app.id)"
+            name: "EduTune-\(app.id)"
         )
 
         var err: OSStatus

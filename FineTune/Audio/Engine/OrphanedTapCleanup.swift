@@ -8,7 +8,7 @@ private let logger = Logger(subsystem: "com.finetuneapp.FineTune", category: "Or
 /// Orphans occur when FineTune crashes or is force-killed (`kill -9`), leaving
 /// aggregate devices with `.mutedWhenTapped` process taps that silently mute apps.
 enum OrphanedTapCleanup {
-    /// Destroys any aggregate devices named "FineTune-*" left over from a previous session.
+    /// Destroys any aggregate devices named "EduTune-*" left over from a previous session.
     /// Call on startup before creating any new taps.
     static func destroyOrphanedDevices() {
         let devices: [AudioDeviceID]
@@ -26,7 +26,7 @@ enum OrphanedTapCleanup {
             guard transportType == .aggregate else { continue }
 
             guard let name = try? device.readDeviceName(),
-                  name.hasPrefix("FineTune-") else { continue }
+                  name.hasPrefix("EduTune-") else { continue }
 
             let err = AudioHardwareDestroyAggregateDevice(device)
             if err == noErr {

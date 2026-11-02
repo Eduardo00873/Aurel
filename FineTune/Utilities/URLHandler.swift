@@ -18,7 +18,7 @@ protocol URLHandlerEngine {
     func getMuteForInactive(identifier: String) -> Bool
 }
 
-/// Handles URL scheme actions for FineTune (finetune://...)
+/// Handles URL scheme actions for EduTune (edutune://...)
 @MainActor
 final class URLHandler {
     private let audioEngine: any URLHandlerEngine
@@ -31,7 +31,7 @@ final class URLHandler {
     func handleURL(_ url: URL) {
         logger.info("Received URL: \(url.absoluteString)")
         
-        guard url.scheme == "finetune" else {
+        guard url.scheme == "edutune" else {
             logger.warning("Unknown URL scheme: \(url.scheme ?? "nil")")
             return
         }

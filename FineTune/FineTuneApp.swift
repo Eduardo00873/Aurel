@@ -73,7 +73,7 @@ struct FineTuneApp: App {
                 updateManager: updateManager
             )
         }
-        FluidMenuBarExtra("FineTune", image: launchIconImage, isInserted: $showMenuBarExtra) {
+        FluidMenuBarExtra("EduTune", image: launchIconImage, isInserted: $showMenuBarExtra) {
             menuBarContent
         }
     }
@@ -208,7 +208,7 @@ struct FineTuneApp: App {
         // status item has been materialized before any hotkey can fire.
         let popupController = MenuBarPopupController()
         let resolver = TargetAppResolver(
-            ownBundleID: Bundle.main.bundleIdentifier ?? "com.finetuneapp.FineTune"
+            ownBundleID: Bundle.main.bundleIdentifier ?? "com.github.eduardo00873.EduTune"
         )
         resolver.start()
         let registry = ShortcutsRegistry(
