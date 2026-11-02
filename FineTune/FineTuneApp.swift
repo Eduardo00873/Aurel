@@ -50,6 +50,7 @@ struct FineTuneApp: App {
     @State private var menuBarPopupController: MenuBarPopupController
     @State private var shortcutsRegistry: ShortcutsRegistry
     @State private var resolver: TargetAppResolver
+    @State private var welcomeController = WelcomeWindowController()
     @StateObject private var updateManager = UpdateManager()
     @State private var showMenuBarExtra = true
 
@@ -225,8 +226,13 @@ struct FineTuneApp: App {
         // Pass engine to AppDelegate
         _appDelegate.wrappedValue.audioEngine = engine
 
-        if permission.status == .unknown {
-            permission.request()
+        // First launch: explain the permission before macOS asks for it.
+        if WelcomeWindowController.shouldShow(for: permission.status) {
+            let welcome = WelcomeWindowController()
+            _welcomeController = State(initialValue: welcome)
+            DispatchQueue.main.async {
+                welcome.show { permission.request() }
+            }
         }
 
         // DeviceVolumeMonitor is now created and started inside AudioEngine

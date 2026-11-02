@@ -79,7 +79,14 @@ All audio is processed locally on your Mac. Aurel doesn't record, save or upload
 
 ## Install
 
-Signed, notarized builds will be published on the [Releases](../../releases) page. Until then, Aurel can be built from source in a couple of minutes — see below.
+1. Download **Aurel.dmg** from the [latest release](../../releases/latest).
+2. Open the disk image and drag **Aurel** to **Applications**.
+3. Open Aurel. Because this early build isn't notarized by Apple yet, macOS blocks it the first time:
+   - open **System Settings › Privacy & Security**, scroll down and click **Open Anyway** next to Aurel, then confirm.
+   - or, in Terminal: `xattr -dr com.apple.quarantine /Applications/Aurel.app`
+4. Follow the short welcome and allow **System Audio Recording** when macOS asks.
+
+Aurel lives in the menu bar — look for the sound-wave icon.
 
 ## Tips
 
