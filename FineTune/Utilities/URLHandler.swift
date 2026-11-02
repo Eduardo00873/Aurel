@@ -254,6 +254,12 @@ final class URLHandler {
             return
         }
 
+        // setDevice creates a process tap, so an ignored app must stay on normal macOS routing.
+        guard !audioEngine.settingsManager.isIgnored(app.persistenceIdentifier) else {
+            logger.info("set-device: ignoring '\(appIdentifier)' because the app is ignored")
+            return
+        }
+
         audioEngine.setDevice(for: app, deviceUID: deviceUID)
         logger.info("Routed \(app.name) to device \(deviceUID)")
     }
