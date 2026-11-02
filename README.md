@@ -18,7 +18,9 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-6B4DF5?style=flat-square" alt="GPL-3.0 license">
 </p>
 
----
+<p align="center">
+  <img src="assets/screenshots/popup-dark.png" width="820" alt="Aurel menu bar panel with system output and per-app volume">
+</p>
 
 Music up, notifications down, the video call exactly where you want it. Aurel gives each app its own volume, mute and output — without extra drivers, accounts or clutter.
 
@@ -31,6 +33,39 @@ Music up, notifications down, the video call exactly where you want it. Aurel gi
 - **Pinned and hidden apps** — keep favourite apps in the list even when they're quiet, or hide the ones you never want to touch.
 - **Keyboard friendly** — move with ↑ ↓, adjust with ← →, press M to mute, or type a number to set a level.
 - **Feels built in** — native controls, Liquid Glass on macOS 26, and full support for light and dark appearance.
+
+<!--
+  SCREENSHOT GALLERY — ready to enable once more captures exist.
+  1. Capture the panel or window (⌘⇧4, then Space, then click it).
+  2. Note the panel's edges in pixels and run:
+     swift scripts/readme-screenshot.swift capture.png assets/screenshots/<name>.png <left> <top> <right> <bottom>
+  3. Remove the comment markers around this section.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/popup-light.png" alt="Menu bar panel in light mode"><br>
+      <sub><b>Menu bar panel</b> · light</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/output-menu.png" alt="Per-app output menu"><br>
+      <sub><b>Per-app output</b> · follow the system or pin a device</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/settings.png" alt="Aurel Settings window"><br>
+      <sub><b>Settings</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/hud.png" alt="Volume overlay"><br>
+      <sub><b>Volume overlay</b> · media keys</sub>
+    </td>
+  </tr>
+</table>
+-->
 
 ## Private by design
 
