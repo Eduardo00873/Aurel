@@ -145,6 +145,16 @@ Nenhum workflow foi alterado nesta fase.
 - Não usar em simultâneo com o FineTune (§6).
 - Atualizações automáticas desativadas: cada versão nova tem de ser instalada manualmente.
 - Ícone da app ainda é o do FineTune.
+- **Ducking durante chamadas WhatsApp (comportamento do macOS, não regressão).** Durante uma chamada, o WhatsApp pede ao macOS `AudioDeviceDuck(<saída padrão>, 0.177828, …)`, cerca de −15 dB. O `coreaudiod` aplica esse fator a todos os outros clientes de áudio na saída padrão do sistema, e só o WhatsApp fica isento. Logs de 2026-11-02:
+  - **Sem o EduTune** (17:13:52): 28 clientes reduzidos a `0.177828` e só o WhatsApp a `1.000000`. Por isso também acontece sem o EduTune.
+  - **Com o EduTune:** o cliente do EduTune é reduzido da mesma forma (19:11:12, `BuiltInSpeakerDevice … pid 72072 … 0.177828`), porque reproduz o áudio das apps que controla.
+  - **A redução acompanha a saída padrão:** em cada troca, o WhatsApp repõe `1.0` no dispositivo anterior e aplica `0.177828` ao novo, cerca de 0,5 s depois mais 0,35 s de rampa. Daí um breve pico de volume ao trocar de saída durante uma chamada.
+- **Modo híbrido VoIP considerado e rejeitado.** A ideia era retirar a app de chamadas do EduTune enquanto dura a chamada. Foi rejeitada por duas razões:
+  - não elimina o ducking das restantes apps, que é aplicado pelo macOS em qualquer caso;
+  - não há um sinal público fiável de chamada ativa. `kAudioProcessPropertyIsRunningInput/Output` caiu para 0 em 18 trocas de dispositivo com a chamada ativa (0,45–0,57 s), e não foi demonstrado que distingue uma chamada de uma mensagem de voz. Os sinais exatos (pedidos de ducking, motor de voz) só existem nos logs do sistema.
+- **Configuração recomendada:**
+  - **WhatsApp ignorado no EduTune** (menu de contexto › Hide). Mantém o percurso original do áudio da chamada, e por isso a qualidade da voz e o cancelamento de eco.
+  - **Restantes apps (ex.: Brave) em `System Default`.** Uma app fixa num dispositivo não acompanha a saída global. Ao alternar de saída, o ducking passa para o novo dispositivo e essa app muda de volume de forma inesperada.
 
 ## 9. Validação manual pendente (checklist)
 1. Abrir o popup → confirmar que Brave/WhatsApp aparecem uma vez cada; fechar uma app → desaparece; reabrir → volta (C).
