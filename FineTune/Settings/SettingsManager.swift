@@ -487,6 +487,14 @@ final class SettingsManager {
         scheduleSave()
     }
 
+    /// Moves an output device to the top of the priority list (adding it if new).
+    func promoteDeviceToTopPriority(_ uid: String) {
+        guard settings.outputDevicePriority.first != uid else { return }
+        settings.outputDevicePriority.removeAll { $0 == uid }
+        settings.outputDevicePriority.insert(uid, at: 0)
+        scheduleSave()
+    }
+
     var inputDevicePriorityOrder: [String] {
         settings.inputDevicePriority
     }

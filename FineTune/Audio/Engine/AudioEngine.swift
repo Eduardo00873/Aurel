@@ -29,6 +29,9 @@ final class AudioEngine {
     /// Closure to check if a device is alive. Overridable for testing.
     private let isAliveCheck: (AudioDeviceID) -> Bool
 
+    /// Closure to check if a device uses Bluetooth. Overridable for testing.
+    private let isBluetoothCheck: (AudioDeviceID) -> Bool
+
     /// One-shot HAL listeners for devices that were present but not alive during priority resolution.
     /// Keyed by AudioDeviceID. Each entry holds the device UID, listener block, and a timeout task.
     private var aliveWatchers: [AudioDeviceID: (uid: String, block: AudioObjectPropertyListenerBlock, timeout: Task<Void, Never>)] = [:]
@@ -180,6 +183,7 @@ final class AudioEngine {
         deviceVolumeMonitor: (any DeviceVolumeProviding)? = nil,
         tapFactory: (@MainActor (AudioApp, [String], String?) throws -> any ProcessTapControlling)? = nil,
         isAlive: ((AudioDeviceID) -> Bool)? = nil,
+        isBluetooth: ((AudioDeviceID) -> Bool)? = nil,
         startMonitorsAutomatically: Bool = true
     ) {
         self.permission = permission
@@ -189,6 +193,7 @@ final class AudioEngine {
         self.autoEQProfileManager = autoEQProfileManager
         self.volumeState = VolumeState(settingsManager: manager)
         self.isAliveCheck = isAlive ?? { $0.isDeviceAlive() }
+        self.isBluetoothCheck = isBluetooth ?? { $0.isBluetoothDevice() }
 
         // If a custom deviceProvider is given, use it directly.
         // Otherwise create a real AudioDeviceMonitor (needed by DeviceVolumeMonitor and default tap factory).
@@ -1442,8 +1447,14 @@ final class AudioEngine {
 
     /// Called when a device appears - switches pinned apps back to their preferred device
     private func handleDeviceConnected(_ deviceUID: String, name deviceName: String) {
-        // Register newly connected device in priority list
-        settingsManager.ensureDeviceInPriority(deviceUID)
+        // Register newly connected device in priority list. A Bluetooth device the user
+        // just connected (headphones, speakers) becomes the top priority, so it takes over
+        // the output like macOS does; wired devices keep their saved position.
+        if let device = deviceMonitor.device(for: deviceUID), isBluetoothCheck(device.id) {
+            settingsManager.promoteDeviceToTopPriority(deviceUID)
+        } else {
+            settingsManager.ensureDeviceInPriority(deviceUID)
+        }
 
         var affectedApps: [AudioApp] = []
         var tapsToSwitch: [any ProcessTapControlling] = []
