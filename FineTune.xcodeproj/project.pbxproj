@@ -446,7 +446,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FineTune/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel © 2026 Eduardo Carvalho. Includes code from FineTune © 2026 Ronit Singh. GPL-3.0.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -485,7 +485,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FineTune/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel © 2026 Eduardo Carvalho. Includes code from FineTune © 2026 Ronit Singh. GPL-3.0.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

@@ -35,23 +35,9 @@ struct AboutTab: View {
                 Text("Version \(versionShort) (\(buildNumber))")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.secondary)
-
-                Text("Based on FineTune by Ronit Singh")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
             }
 
             Spacer()
-
-            HStack(spacing: 8) {
-                AboutLinkChip(
-                    label: "FineTune on GitHub",
-                    icon: "star",
-                    hoverIcon: "star.fill",
-                    hoverColor: .yellow,
-                    url: URL(string: "https://github.com/ronitsingh10/FineTune")!
-                )
-            }
 
             footer
                 .padding(.top, 16)
@@ -71,9 +57,9 @@ struct AboutTab: View {
                 .buttonStyle(.plain)
 
                 Text("·")
-                Text("FineTune © \(yearText) Ronit Singh")
+                Text("Aurel © \(yearText) Eduardo Carvalho")
             }
-            Text("Aurel modifications © \(yearText) Eduardo Carvalho")
+            Text("Includes code from FineTune © \(yearText) Ronit Singh")
         }
         .font(.system(size: 10))
         .foregroundStyle(.tertiary)

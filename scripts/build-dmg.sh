@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# FineTune DMG Build Script
+# Aurel DMG Build Script
 # Requires: Xcode, Node.js 18+, GraphicsMagick, ImageMagick
 # Install dependencies: brew install graphicsmagick imagemagick
 
@@ -31,7 +31,7 @@ echo "==> Creating DMG..."
 # - App icon composited onto disk icon
 # - "Drag to Applications" layout
 # - Code signing
-npx create-dmg "$BUILD_DIR/FineTune.app" "$BUILD_DIR" --overwrite
+npx create-dmg "$BUILD_DIR/Aurel.app" "$BUILD_DIR" --overwrite
 
 echo "==> Done!"
 echo "DMG created at: $BUILD_DIR/"
