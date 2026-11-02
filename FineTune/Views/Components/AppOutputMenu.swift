@@ -38,7 +38,7 @@ struct AppOutputMenu: View {
                 if isCustom {
                     Image(systemName: "pin.fill")
                         .font(.system(size: 8))
-                        .foregroundStyle(DesignTokens.Colors.textSecondary)
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
                 }
                 Text(customName ?? "System Default")
                     .lineLimit(1)
@@ -46,7 +46,7 @@ struct AppOutputMenu: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 8, weight: .semibold))
             }
-            .font(.system(size: 11))
+            .font(DesignTokens.Typography.secondary)
             .foregroundStyle(labelColor)
             .contentShape(Rectangle())
             .background(MenuAnchorView(anchor: anchor))
@@ -77,8 +77,8 @@ struct AppOutputMenu: View {
 
     /// Custom routes read in primary text so they stand apart from the quieter default.
     private var labelColor: Color {
-        if isHovered || isCustom { return DesignTokens.Colors.textPrimary }
-        return DesignTokens.Colors.textSecondary
+        if isHovered || isCustom { return DesignTokens.Palette.textPrimary }
+        return DesignTokens.Palette.textSecondary
     }
 }
 

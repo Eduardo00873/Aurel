@@ -18,6 +18,7 @@ struct AppVolumeRow<Output: View>: View {
     @State private var dragOverrideValue: Double?
     @State private var isHovered = false
     @State private var isSliderEditing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var sliderValue: Double {
         dragOverrideValue ?? VolumeMapping.gainToSlider(volume)
@@ -48,8 +49,8 @@ struct AppVolumeRow<Output: View>: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 appIcon
                 Text(name)
-                    .font(DesignTokens.Typography.rowName)
-                    .foregroundStyle(isInactive ? DesignTokens.Colors.textSecondary : DesignTokens.Colors.textPrimary)
+                    .font(DesignTokens.Typography.itemName)
+                    .foregroundStyle(isInactive ? DesignTokens.Palette.textSecondary : DesignTokens.Palette.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: DesignTokens.Spacing.xs)
@@ -95,13 +96,13 @@ struct AppVolumeRow<Output: View>: View {
         .padding(.horizontal, DesignTokens.Spacing.sm)
         .padding(.vertical, DesignTokens.Spacing.sm)
         .background {
-            RoundedRectangle(cornerRadius: DesignTokens.Dimensions.rowRadius)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.medium)
                 .fill(isFocused ? DesignTokens.Colors.hoverSurface : .clear)
         }
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .animation(DesignTokens.Animation.hover, value: showsPercentage)
-        .animation(DesignTokens.Animation.quick, value: showMutedIcon)
+        .animation(reduceMotion ? nil : DesignTokens.Animation.hover, value: showsPercentage)
+        .animation(reduceMotion ? nil : DesignTokens.Animation.quick, value: showMutedIcon)
     }
 
     @ViewBuilder

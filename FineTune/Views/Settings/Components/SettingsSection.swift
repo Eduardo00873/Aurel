@@ -12,20 +12,22 @@ struct SettingsSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             if let title {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(DesignTokens.Colors.textPrimary)
-                    .padding(.horizontal, 4)
+                    .font(DesignTokens.Typography.sectionTitle)
+                    .foregroundStyle(DesignTokens.Palette.textSecondary)
+                    .padding(.horizontal, DesignTokens.Spacing.xs)
+                    .accessibilityAddTraits(.isHeader)
             }
             VStack(spacing: 0) {
                 content()
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(DesignTokens.Palette.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.large, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.large, style: .continuous)
+                    .strokeBorder(DesignTokens.Palette.border, lineWidth: 0.5)
             }
         }
     }

@@ -42,15 +42,15 @@ private struct OutputDeviceRow: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 DeviceBadge(icon: icon, isSelected: isSelected)
                 Text(device.name)
-                    .font(DesignTokens.Typography.rowName)
-                    .foregroundStyle(DesignTokens.Colors.textPrimary)
+                    .font(isSelected ? DesignTokens.Typography.itemName : DesignTokens.Typography.rowName)
+                    .foregroundStyle(DesignTokens.Palette.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(DesignTokens.Palette.accent)
                         .accessibilityHidden(true)
                 }
             }
@@ -77,19 +77,20 @@ private struct PopupRowButtonBody: View {
     let isFocused: Bool
     @State private var isHovered = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         configuration.label
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
             .background {
-                RoundedRectangle(cornerRadius: DesignTokens.Dimensions.rowRadius)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.medium)
                     .fill(isHovered || isFocused ? DesignTokens.Colors.hoverSurface : .clear)
             }
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .opacity(isEnabled ? 1 : 0.4)
             .onHover { isHovered = $0 }
-            .animation(DesignTokens.Animation.hover, value: isHovered)
-            .animation(DesignTokens.Animation.quick, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : DesignTokens.Animation.hover, value: isHovered)
+            .animation(reduceMotion ? nil : DesignTokens.Animation.quick, value: configuration.isPressed)
     }
 }

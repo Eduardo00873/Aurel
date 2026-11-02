@@ -21,12 +21,12 @@ struct SettingsRow<Trailing: View>: View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(DesignTokens.Colors.textPrimary)
+                    .font(DesignTokens.Typography.itemName)
+                    .foregroundStyle(DesignTokens.Palette.textPrimary)
                 if let description {
                     Text(description)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.secondary)
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

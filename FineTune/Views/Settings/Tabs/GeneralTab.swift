@@ -34,32 +34,28 @@ struct GeneralTab: View {
     // MARK: - General
 
     private var generalSection: some View {
-        SettingsSection("General") {
-            SettingsRow(
-                "Launch at Login",
-                description: "Start Aurel when you log in"
-            ) {
-                Toggle("", isOn: $settings.appSettings.launchAtLogin)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
+        VStack(alignment: .leading, spacing: 24) {
+            SettingsSection("Startup") {
+                SettingsRow(
+                    "Launch at Login",
+                    description: "Start Aurel when you log in"
+                ) {
+                    Toggle("", isOn: $settings.appSettings.launchAtLogin)
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .labelsHidden()
+                }
             }
-            SettingsRowDivider()
-            SettingsRow(
-                "Theme",
-                description: "Match macOS, or lock to Light or Dark"
-            ) {
-                ThemeTilePicker(selection: $settings.appSettings.appearance)
-            }
-            SettingsRowDivider()
-            SettingsRow(
-                "Device Disconnect Alerts",
-                description: "Show notification when an audio device disconnects"
-            ) {
-                Toggle("", isOn: $settings.appSettings.showDeviceDisconnectAlerts)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
+            SettingsSection("Notifications") {
+                SettingsRow(
+                    "Device Disconnect Alerts",
+                    description: "Show a notification when an audio device disconnects"
+                ) {
+                    Toggle("", isOn: $settings.appSettings.showDeviceDisconnectAlerts)
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .labelsHidden()
+                }
             }
         }
     }

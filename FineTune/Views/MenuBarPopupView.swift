@@ -50,6 +50,7 @@ struct MenuBarPopupView: View {
     @State private var textEntry = PopupTextEntryCoordinator()
 
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Layout
 
@@ -158,19 +159,29 @@ struct MenuBarPopupView: View {
     // MARK: - Header & Footer
 
     private var header: some View {
-        HStack {
-            Text("Aurel")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(DesignTokens.Colors.textPrimary)
-            Spacer()
-            Button("Settings", systemImage: "gearshape") {
-                openSettingsWindow()
+        VStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(nsImage: NSApp.applicationIconImage ?? NSImage())
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 20, height: 20)
+                    .accessibilityHidden(true)
+                Text("Aurel")
+                    .font(DesignTokens.Typography.title)
+                    .foregroundStyle(DesignTokens.Palette.textPrimary)
+                Spacer()
+                Button("Settings", systemImage: "gearshape") {
+                    openSettingsWindow()
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(PopupIconButtonStyle())
+                .help("Aurel Settings")
             }
-            .labelStyle(.iconOnly)
-            .buttonStyle(PopupIconButtonStyle())
-            .help("Aurel Settings")
+            .padding(.horizontal, DesignTokens.Spacing.sm)
+
+            Divider()
+                .padding(.horizontal, DesignTokens.Spacing.sm)
         }
-        .padding(.horizontal, DesignTokens.Spacing.sm)
     }
 
     private var footer: some View {
@@ -178,30 +189,18 @@ struct MenuBarPopupView: View {
             Divider()
                 .padding(.horizontal, DesignTokens.Spacing.sm)
             Button {
-                openSettingsWindow()
-            } label: {
-                HStack {
-                    Text("Aurel Settings…")
-                    Spacer()
-                }
-            }
-            .buttonStyle(PopupRowButtonStyle())
-            .font(.system(size: 13))
-            .foregroundStyle(DesignTokens.Colors.textPrimary)
-
-            Button {
                 NSApplication.shared.terminate(nil)
             } label: {
                 HStack {
                     Text("Quit Aurel")
                     Spacer()
                     Text("⌘Q")
-                        .foregroundStyle(DesignTokens.Colors.textTertiary)
+                        .foregroundStyle(DesignTokens.Palette.textTertiary)
                 }
             }
             .buttonStyle(PopupRowButtonStyle())
-            .font(.system(size: 13))
-            .foregroundStyle(DesignTokens.Colors.textPrimary)
+            .font(DesignTokens.Typography.rowName)
+            .foregroundStyle(DesignTokens.Palette.textPrimary)
             .keyboardShortcut("q", modifiers: .command)
             .help("Quit Aurel (⌘Q)")
         }
@@ -235,8 +234,8 @@ struct MenuBarPopupView: View {
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(DesignTokens.Colors.textSecondary)
+            .font(DesignTokens.Typography.sectionTitle)
+            .foregroundStyle(DesignTokens.Palette.textSecondary)
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .accessibilityAddTraits(.isHeader)
     }
@@ -413,7 +412,7 @@ struct MenuBarPopupView: View {
         if !hiddenApps.isEmpty {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 Button {
-                    withAnimation(DesignTokens.Animation.quick) {
+                    withAnimation(reduceMotion ? nil : DesignTokens.Animation.quick) {
                         showsHiddenApps.toggle()
                     }
                 } label: {
@@ -426,8 +425,8 @@ struct MenuBarPopupView: View {
                     }
                 }
                 .buttonStyle(PopupRowButtonStyle())
-                .font(.system(size: 12))
-                .foregroundStyle(DesignTokens.Colors.textSecondary)
+                .font(DesignTokens.Typography.rowDescription)
+                .foregroundStyle(DesignTokens.Palette.textSecondary)
 
                 if showsHiddenApps {
                     ForEach(hiddenApps, id: \.persistenceIdentifier) { info in
@@ -437,16 +436,16 @@ struct MenuBarPopupView: View {
                                 .frame(width: 16, height: 16)
                                 .opacity(0.6)
                             Text(info.displayName)
-                                .font(.system(size: 12))
-                                .foregroundStyle(DesignTokens.Colors.textSecondary)
+                                .font(DesignTokens.Typography.rowDescription)
+                                .foregroundStyle(DesignTokens.Palette.textSecondary)
                                 .lineLimit(1)
                             Spacer()
                             Button("Show") {
                                 audioEngine.unignoreApp(info.persistenceIdentifier)
                             }
                             .buttonStyle(.plain)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.accentColor)
+                            .font(DesignTokens.Typography.secondary.weight(.medium))
+                            .foregroundStyle(DesignTokens.Palette.accent)
                             .help("Show \(info.displayName) and control its volume again")
                         }
                         .padding(.horizontal, DesignTokens.Spacing.sm)

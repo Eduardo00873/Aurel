@@ -2,7 +2,7 @@
 import SwiftUI
 import AppKit
 
-/// Design System tokens for FineTune UI
+/// Design System tokens for Aurel UI
 /// Centralized values for colors, typography, spacing, dimensions, and animations
 enum DesignTokens {
 
@@ -21,6 +21,44 @@ enum DesignTokens {
         Color(nsColor: NSColor(name: NSColor.Name(name)) { appearance in
             appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
         })
+    }
+
+    /// sRGB colour from a 0xRRGGBB value.
+    static func rgb(_ hex: UInt32) -> NSColor {
+        NSColor(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+
+    // MARK: - Aurel Palette
+
+    /// Aurel's neutral palette (redesign spec §2.1). Dark values follow the spec;
+    /// light values are their counterparts so both modes share one identity.
+    /// The accent is the app's AccentColor asset, so `.accentColor` / `.tint`
+    /// pick it up without hard-coding RGB in views.
+    enum Palette {
+        static let background = dynamicColor(name: "aurelBackground", light: rgb(0xF5F6F8), dark: rgb(0x17191E))
+        static let surface = dynamicColor(name: "aurelSurface", light: rgb(0xFFFFFF), dark: rgb(0x22252C))
+        static let elevatedSurface = dynamicColor(name: "aurelElevatedSurface", light: rgb(0xFFFFFF), dark: rgb(0x292D35))
+        static let border = dynamicColor(name: "aurelBorder", light: rgb(0xE1E3E8), dark: rgb(0x373B45))
+        static let textPrimary = dynamicColor(name: "aurelTextPrimary", light: rgb(0x1C1D21), dark: rgb(0xF0F1F4))
+        static let textSecondary = dynamicColor(name: "aurelTextSecondary", light: rgb(0x5E636E), dark: rgb(0xA0A5B0))
+        static let textTertiary = dynamicColor(name: "aurelTextTertiary", light: rgb(0x8A8F99), dark: rgb(0x737987))
+        static let accent: Color = .accentColor
+    }
+
+    // MARK: - Radius
+
+    /// Corner radii (spec §2.3): small controls, cards and surfaces, larger elements.
+    enum Radius {
+        static let small: CGFloat = 6
+        static let control: CGFloat = 8
+        static let medium: CGFloat = 10
+        static let large: CGFloat = 12
+        static let extraLarge: CGFloat = 14
     }
 
     // MARK: - Colors
@@ -342,6 +380,23 @@ enum DesignTokens {
 
         /// Settings row description (11pt regular, tertiary)
         static let rowDescription = Font.system(size: 11, weight: .regular)
+
+        // MARK: Aurel hierarchy (redesign spec §2.2)
+
+        /// Window and popup title
+        static let title = Font.system(size: 17, weight: .semibold)
+
+        /// Section titles
+        static let sectionTitle = Font.system(size: 12, weight: .semibold)
+
+        /// App and device names in lists
+        static let itemName = Font.system(size: 13, weight: .medium)
+
+        /// Secondary text and descriptions
+        static let secondary = Font.system(size: 11, weight: .regular)
+
+        /// Small labels
+        static let label = Font.system(size: 10, weight: .regular)
     }
 
     // MARK: - Spacing (standard 1× multiplier)
