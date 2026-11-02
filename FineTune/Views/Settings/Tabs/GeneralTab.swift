@@ -12,7 +12,6 @@ struct GeneralTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 generalSection
-                menuBarSection
                 dataSection
             }
             .padding(.horizontal, 20)
@@ -61,26 +60,6 @@ struct GeneralTab: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     .labelsHidden()
-            }
-        }
-    }
-
-    // MARK: - Menu Bar
-
-    private var menuBarSection: some View {
-        SettingsSection("Menu Bar") {
-            SettingsRow(
-                "Icon Style",
-                description: "How Aurel appears in your menu bar"
-            ) {
-                IconStyleSegmentedControl(selection: $settings.appSettings.menuBarIconStyle)
-            }
-            SettingsRowDivider()
-            SettingsRow(
-                "Popup Size",
-                description: "Smaller fits more on screen; larger leaves more breathing room."
-            ) {
-                PopupSizeTilePicker(selection: $settings.appSettings.popupSize)
             }
         }
     }

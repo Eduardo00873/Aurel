@@ -10,18 +10,6 @@ struct AudioTab: View {
     /// Memoized sorted output devices for the system-sounds picker.
     @State private var sortedOutputDevices: [AudioDevice] = []
 
-    private var unifiedLoudnessToggleBinding: Binding<Bool> {
-        Binding(
-            get: {
-                settings.appSettings.loudnessCompensationEnabled
-                    && settings.appSettings.loudnessEqualizationEnabled
-            },
-            set: { isEnabled in
-                settings.appSettings.setUnifiedLoudnessEnabled(isEnabled)
-            }
-        )
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -62,33 +50,13 @@ struct AudioTab: View {
                     width: 280
                 )
             }
-            SettingsRowDivider()
-            SettingsRow(
-                "Loudness Compensation",
-                description: "Boost low frequencies at low volume"
-            ) {
-                Toggle("", isOn: unifiedLoudnessToggleBinding)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
-            }
         }
     }
 
-    // MARK: - Devices
+    // MARK: - Alerts
 
     private var devicesSection: some View {
-        SettingsSection("Devices") {
-            SettingsRow(
-                "Lock Input Device",
-                description: "Prevent auto-switching when devices connect"
-            ) {
-                Toggle("", isOn: $settings.appSettings.lockInputDevice)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
-            }
-            SettingsRowDivider()
+        SettingsSection("Alerts") {
             SettingsRow(
                 "System Sounds",
                 description: "Where alerts and effects play"

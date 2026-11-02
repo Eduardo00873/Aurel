@@ -177,7 +177,7 @@ struct FineTuneApp: App {
         let launchVolumeMonitor = engine.deviceVolumeMonitor
         let launchID = launchVolumeMonitor.defaultDeviceID
         let launchState = MenuBarIconState.baseline(
-            style: settings.appSettings.menuBarIconStyle,
+            style: .default,  // Aurel always shows its sound-wave icon
             volume: launchVolumeMonitor.volumes[launchID] ?? 1.0,
             muted: launchVolumeMonitor.muteStates[launchID] ?? false,
             deviceSymbol: MenuBarDeviceIconResolver.resolveSymbol(

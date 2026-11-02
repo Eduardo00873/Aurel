@@ -82,7 +82,7 @@ final class MenuBarIconCoordinator: MediaKeyIconFlashing {
         let volume = deviceVolumeMonitor.volumes[id] ?? 0
         let muted = deviceVolumeMonitor.muteStates[id] ?? false
         return MenuBarIconState.baseline(
-            style: settings.appSettings.menuBarIconStyle,
+            style: .default,  // Aurel always shows its sound-wave icon
             volume: volume,
             muted: muted,
             deviceSymbol: currentDeviceSymbol()
