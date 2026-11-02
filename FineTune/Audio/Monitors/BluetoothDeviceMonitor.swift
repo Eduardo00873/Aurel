@@ -26,6 +26,10 @@ final class BluetoothDeviceMonitor {
     /// Inline error messages keyed by MAC address.
     private(set) var connectionErrors: [String: String] = [:]
 
+    /// Number of IOBluetooth refreshes requested (start, refresh, device-appeared).
+    /// Lets tests confirm the engine leaves this monitor idle.
+    private(set) var refreshRequestCount = 0
+
     // MARK: - Private
 
     private let logger = Logger(
@@ -94,6 +98,7 @@ final class BluetoothDeviceMonitor {
     /// Rebuilds `pairedDevices` from the current IOBluetooth snapshot.
     /// Call on popup-appear and after any CoreAudio device list change.
     func refresh() {
+        refreshRequestCount += 1
         refreshTask?.cancel()
         refreshTask = Task {
             let powered = await Self.runOnBTQueue {
@@ -166,6 +171,7 @@ final class BluetoothDeviceMonitor {
     /// via FineTune) are removed. If a FineTune-initiated connection is in flight,
     /// clears the connecting state for devices that succeeded.
     func notifyDeviceAppearedInCoreAudio() {
+        refreshRequestCount += 1
         if !connectingIDs.isEmpty {
             Task {
                 let stillDisconnected = await Self.runOnBTQueue {

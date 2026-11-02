@@ -266,7 +266,9 @@ final class AudioEngine {
                     self.processMonitor.start()
                 }
                 self.deviceMonitor.start()
-                self.bluetoothDeviceMonitor.start()
+                // The paired-Bluetooth monitor is not started: its only consumer was the
+                // popup's Bluetooth list, and querying IOBluetooth triggers a Bluetooth
+                // permission prompt. Audio devices (Bluetooth included) come from CoreAudio.
 
                 #if !APP_STORE
                 ddc.onProbeCompleted = { [weak self] in
@@ -371,12 +373,10 @@ final class AudioEngine {
 
         deviceMonitor.onDeviceDisconnected = { [weak self] deviceUID, deviceName in
             self?.handleDeviceDisconnected(deviceUID, name: deviceName)
-            self?.bluetoothDeviceMonitor.refresh()
         }
 
         deviceMonitor.onDeviceConnected = { [weak self] deviceUID, deviceName in
             self?.handleDeviceConnected(deviceUID, name: deviceName)
-            self?.bluetoothDeviceMonitor.notifyDeviceAppearedInCoreAudio()
         }
 
         deviceMonitor.onInputDeviceDisconnected = { [weak self] deviceUID, deviceName in
