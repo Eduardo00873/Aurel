@@ -28,7 +28,7 @@ struct AboutTab: View {
                     .interpolation(.high)
                     .frame(width: 96, height: 96)
 
-                Text("EduTune")
+                Text("Aurel")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(DesignTokens.Colors.textPrimary)
 
@@ -73,7 +73,7 @@ struct AboutTab: View {
                 Text("·")
                 Text("FineTune © \(yearText) Ronit Singh")
             }
-            Text("EduTune modifications © \(yearText) Eduardo Carvalho")
+            Text("Aurel modifications © \(yearText) Eduardo Carvalho")
         }
         .font(.system(size: 10))
         .foregroundStyle(.tertiary)

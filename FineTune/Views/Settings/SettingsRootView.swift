@@ -58,6 +58,6 @@ struct SettingsRootView: View {
         .frame(width: 720, height: 560)
         .preferredColorScheme(settings.appSettings.appearance.swiftUIColorScheme)
         .background(WindowAppearanceBridge(appearance: settings.appSettings.appearance.nsAppearance))
-        .background(WindowTitleBridge(title: "EduTune Settings"))
+        .background(WindowTitleBridge(title: "Aurel Settings"))
     }
 }

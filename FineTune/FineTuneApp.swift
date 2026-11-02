@@ -73,7 +73,7 @@ struct FineTuneApp: App {
                 updateManager: updateManager
             )
         }
-        FluidMenuBarExtra("EduTune", image: launchIconImage, isInserted: $showMenuBarExtra) {
+        FluidMenuBarExtra("Aurel", image: launchIconImage, isInserted: $showMenuBarExtra) {
             menuBarContent
         }
     }

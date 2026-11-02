@@ -16,10 +16,10 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>EduTune needs access to control volume levels for individual applications.</string>
+	<string>Aurel needs access to control volume levels for individual applications.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>EduTune uses Bluetooth to connect paired audio devices from the menu bar.</string>
+	<string>Aurel uses Bluetooth to connect paired audio devices from the menu bar.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>EduTune needs microphone access to capture audio from apps using input-capable devices.</string>
+	<string>Aurel needs microphone access to capture audio from apps using input-capable devices.</string>
 </dict>
 </plist>

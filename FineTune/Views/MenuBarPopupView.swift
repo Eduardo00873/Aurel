@@ -159,7 +159,7 @@ struct MenuBarPopupView: View {
 
     private var header: some View {
         HStack {
-            Text("EduTune")
+            Text("Aurel")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(DesignTokens.Colors.textPrimary)
             Spacer()
@@ -168,7 +168,7 @@ struct MenuBarPopupView: View {
             }
             .labelStyle(.iconOnly)
             .buttonStyle(PopupIconButtonStyle())
-            .help("EduTune Settings")
+            .help("Aurel Settings")
         }
         .padding(.horizontal, DesignTokens.Spacing.sm)
     }
@@ -181,7 +181,7 @@ struct MenuBarPopupView: View {
                 openSettingsWindow()
             } label: {
                 HStack {
-                    Text("EduTune Settings…")
+                    Text("Aurel Settings…")
                     Spacer()
                 }
             }
@@ -193,7 +193,7 @@ struct MenuBarPopupView: View {
                 NSApplication.shared.terminate(nil)
             } label: {
                 HStack {
-                    Text("Quit EduTune")
+                    Text("Quit Aurel")
                     Spacer()
                     Text("⌘Q")
                         .foregroundStyle(DesignTokens.Colors.textTertiary)
@@ -203,7 +203,7 @@ struct MenuBarPopupView: View {
             .font(.system(size: 13))
             .foregroundStyle(DesignTokens.Colors.textPrimary)
             .keyboardShortcut("q", modifiers: .command)
-            .help("Quit EduTune (⌘Q)")
+            .help("Quit Aurel (⌘Q)")
         }
     }
 

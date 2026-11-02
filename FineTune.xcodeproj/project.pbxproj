@@ -446,7 +446,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FineTune/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "EduTune modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -455,7 +455,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D ENABLE_TCC_SPI";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.eduardo00873.EduTune;
 				PRODUCT_MODULE_NAME = FineTune;
-				PRODUCT_NAME = EduTune;
+				PRODUCT_NAME = Aurel;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -485,7 +485,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FineTune/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "EduTune modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Aurel modifications © 2026 Eduardo Carvalho. Based on FineTune © 2026 Ronit Singh. GPL-3.0.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -494,7 +494,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D ENABLE_TCC_SPI";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.eduardo00873.EduTune;
 				PRODUCT_MODULE_NAME = FineTune;
-				PRODUCT_NAME = EduTune;
+				PRODUCT_NAME = Aurel;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -523,7 +523,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EduTune.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EduTune";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aurel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Aurel";
 			};
 			name = Debug;
 		};
@@ -545,7 +545,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EduTune.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EduTune";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Aurel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Aurel";
 			};
 			name = Release;
 		};

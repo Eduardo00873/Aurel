@@ -37,7 +37,7 @@ final class MenuBarPopupController: MenuBarPopupControlling {
     /// argument we pass to `FluidMenuBarExtra(...)` in `FineTuneApp`.
     private let accessibilityTitle: String
 
-    init(accessibilityTitle: String = "EduTune") {
+    init(accessibilityTitle: String = "Aurel") {
         self.accessibilityTitle = accessibilityTitle
     }
 

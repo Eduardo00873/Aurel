@@ -179,7 +179,7 @@ final class MenuBarIconCoordinator: MediaKeyIconFlashing {
         if let cached = cachedButton { return cached }
         for window in NSApp.windows {
             guard let contentView = window.contentView else { continue }
-            if let button = findStatusBarButton(in: contentView, matching: "EduTune") {
+            if let button = findStatusBarButton(in: contentView, matching: "Aurel") {
                 button.wantsLayer = true
                 cachedButton = button
                 return button

@@ -1,6 +1,6 @@
 # NOTICE
 
-**EduTune** is a modified version of **FineTune**.
+**Aurel** (formerly EduTune) is a modified version of **FineTune**.
 
 ## Original work
 
@@ -11,10 +11,10 @@
 
 ## Modifications
 
-- EduTune modifications — Copyright (C) 2026 Eduardo Carvalho
+- Aurel modifications — Copyright (C) 2026 Eduardo Carvalho
 - Licensed under the GNU General Public License v3.0, same as the original work
 
-Ronit Singh is the author of FineTune and is not the author of, nor responsible for, the EduTune modifications.
+Ronit Singh is the author of FineTune and is not the author of, nor responsible for, the Aurel modifications.
 
 ### Summary of changes (2026-11-02)
 
@@ -26,3 +26,7 @@ Ronit Singh is the author of FineTune and is not the author of, nor responsible 
 - About tab: EduTune name, attribution to FineTune, separate copyright lines; Donate button removed.
 
 Internal target, scheme, folder and file names keep their original `FineTune` names.
+
+### Rename (2026-11-02)
+
+- Display name changed from EduTune to Aurel, with a new sound-wave app icon. Internal identifiers (bundle ID `com.github.eduardo00873.EduTune`, settings folder, `edutune://` URL scheme, `EduTune-` aggregate device prefix) are unchanged to preserve permissions and saved settings.
