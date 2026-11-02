@@ -24,7 +24,8 @@ let glow = CGGradient(colorsSpace: nil, colors: [
 ctx.drawRadialGradient(glow, startCenter: CGPoint(x: W/2, y: H/2 + 60), startRadius: 0,
                        endCenter: CGPoint(x: W/2, y: H/2 + 60), endRadius: 900, options: [])
 // Panel, scaled and centred.
-let scale: CGFloat = 1.85
+// Up to 1.85× the capture, but never taller than 82% of the canvas.
+let scale: CGFloat = min(1.85, 0.82 * H / (b - t))
 let pw = (r - l) * scale, ph = (b - t) * scale
 let dest = CGRect(x: (W - pw)/2, y: (H - ph)/2, width: pw, height: ph)
 let path = CGPath(roundedRect: dest, cornerWidth: radius*scale, cornerHeight: radius*scale, transform: nil)
