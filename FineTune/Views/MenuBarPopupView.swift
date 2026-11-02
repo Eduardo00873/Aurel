@@ -212,7 +212,7 @@ struct MenuBarPopupView: View {
     private var mainContent: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                sectionTitle("Output")
+                sectionTitle("System Output")
                 OutputDeviceList(
                     devices: sortedDevices,
                     defaultDeviceID: deviceVolumeMonitor.defaultDeviceID,
@@ -380,6 +380,7 @@ struct MenuBarPopupView: View {
                 devices: sortedDevices,
                 selectedDeviceUID: selectedDeviceUID,
                 isFollowingDefault: isFollowingDefault,
+                systemOutputName: sortedDevices.first(where: { $0.id == deviceVolumeMonitor.defaultDeviceID })?.name,
                 onSelectFollowDefault: onSelectFollowDefault,
                 onDeviceSelected: onDeviceSelected
             )

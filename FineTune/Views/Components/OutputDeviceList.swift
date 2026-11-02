@@ -47,13 +47,19 @@ private struct OutputDeviceRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
+                }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(PopupRowButtonStyle(isFocused: isFocused))
         .accessibilityLabel(device.name)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
-        .help(isSelected ? "Current output" : "Use \(device.name) as output")
+        .help(isSelected ? "Current system output" : "Use \(device.name) as the system output")
     }
 }
 
