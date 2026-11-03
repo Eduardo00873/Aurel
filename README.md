@@ -14,8 +14,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-15.4%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 15.4 or later">
-  <img src="https://img.shields.io/badge/Apple%20Silicon-native-4D70F2?style=flat-square" alt="Apple Silicon native">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-4D70F2?style=flat-square" alt="GPL-3.0 license">
+  <img src="https://img.shields.io/badge/Apple%20Silicon-native-007AFF?style=flat-square" alt="Apple Silicon native">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-007AFF?style=flat-square" alt="GPL-3.0 license">
 </p>
 
 <p align="center">
