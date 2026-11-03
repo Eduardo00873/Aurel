@@ -54,7 +54,7 @@ struct MenuBarPopupView: View {
 
     // MARK: - Layout
 
-    private static let popupWidth: CGFloat = 320
+    private static let popupWidth: CGFloat = 340
     private static let contentPadding: CGFloat = DesignTokens.Spacing.md
 
     /// Height ceiling from the user's popup-size preference (width is fixed).

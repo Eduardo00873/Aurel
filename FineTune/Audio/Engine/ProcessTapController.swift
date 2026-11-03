@@ -154,7 +154,8 @@ final class ProcessTapController: ProcessTapControlling {
     /// Guard against re-entrant crossfade (ORCH-001)
     private var isSwitching = false
     /// Cancellable crossfade task — cancelled when a new switch starts
-    private var crossfadeTask: Task<Void, Error>?
+    /// Serializes crossfade switches: a new switch waits for a cancelled one's cleanup.
+    private let switchRunner = SupersedingTaskRunner()
     private var didLogEQBypassForMultichannel = false
 
     // MARK: - Public Properties
@@ -738,14 +739,13 @@ final class ProcessTapController: ProcessTapControlling {
             }
             try await performDestructiveDeviceSwitch(to: primaryDeviceUID, allDeviceUIDs: newDeviceUIDs, sourceAlreadySilent: true)
         } else {
-            crossfadeTask?.cancel()
-            crossfadeTask = Task {
-                try await performCrossfadeSwitch(to: primaryDeviceUID, allDeviceUIDs: newDeviceUIDs)
-            }
             do {
-                try await crossfadeTask!.value
+                try await switchRunner.run { [weak self] in
+                    guard let self else { return }
+                    try await self.performCrossfadeSwitch(to: primaryDeviceUID, allDeviceUIDs: newDeviceUIDs)
+                }
             } catch is CancellationError {
-                logger.info("[UPDATE] Crossfade cancelled by invalidate()")
+                logger.info("[UPDATE] Crossfade cancelled (invalidated or superseded)")
                 return
             } catch {
                 logger.warning("[UPDATE] Crossfade failed: \(error.localizedDescription), using fallback")
@@ -754,7 +754,6 @@ final class ProcessTapController: ProcessTapControlling {
                 }
                 try await performDestructiveDeviceSwitch(to: primaryDeviceUID, allDeviceUIDs: newDeviceUIDs)
             }
-            crossfadeTask = nil
         }
 
         targetDeviceUIDs = newDeviceUIDs
@@ -776,12 +775,11 @@ final class ProcessTapController: ProcessTapControlling {
         let allUIDs = currentDeviceUIDs
         logger.info("[REFRESH] Tap source changing for \(self.app.name): \(oldPreferred ?? "mixdown") → \(preferredDeviceUID ?? "mixdown")")
 
-        crossfadeTask?.cancel()
-        crossfadeTask = Task {
-            try await performCrossfadeSwitch(to: primaryUID, allDeviceUIDs: allUIDs)
-        }
         do {
-            try await crossfadeTask!.value
+            try await switchRunner.run { [weak self] in
+                guard let self else { return }
+                try await self.performCrossfadeSwitch(to: primaryUID, allDeviceUIDs: allUIDs)
+            }
         } catch is CancellationError {
             logger.info("[REFRESH] Tap source refresh cancelled")
             return
@@ -792,7 +790,6 @@ final class ProcessTapController: ProcessTapControlling {
             }
             try await performDestructiveDeviceSwitch(to: primaryUID, allDeviceUIDs: allUIDs)
         }
-        crossfadeTask = nil
 
         logger.info("[REFRESH] Tap source refresh complete for \(self.app.name)")
     }
@@ -846,8 +843,7 @@ final class ProcessTapController: ProcessTapControlling {
         _activationHostTime = 0
         _hasRenderedAudio = false
 
-        crossfadeTask?.cancel()
-        crossfadeTask = nil
+        switchRunner.cancel()
 
         logger.debug("Invalidating tap for \(self.app.name)")
 

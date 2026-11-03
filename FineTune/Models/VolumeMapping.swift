@@ -8,7 +8,7 @@ import Foundation
 /// at high volumes changes loudness drastically. The x² curve redistributes control
 /// to the perceptually important low-gain region.
 ///
-/// **Do NOT use for device hardware volume (DeviceRow, InputDeviceRow).**
+/// **Do NOT use for device hardware volume (DeviceRow).**
 /// CoreAudio's HAL scalar (kAudioHardwareServiceDeviceProperty_VirtualMainVolume)
 /// is already audio-tapered by the driver — IOAudioLevelControl applies a dB curve
 /// by default (see `setLinearScale()` in IOAudioLevelControl.h). Applying x² on top

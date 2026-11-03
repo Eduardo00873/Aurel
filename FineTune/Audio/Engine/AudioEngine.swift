@@ -271,7 +271,8 @@ final class AudioEngine {
         wireCallbacks()
 
         if startMonitorsAutomatically {
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 if self.permission.status == .authorized {
                     self.processMonitor.start()
                 }
