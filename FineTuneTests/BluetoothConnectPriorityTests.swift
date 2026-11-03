@@ -13,13 +13,14 @@ struct BluetoothConnectPriorityTests {
     private let display = AudioDevice(id: 82, uid: "display-uid", name: "VG278", icon: nil, supportsAutoEQ: false)
     private let headphones = AudioDevice(id: 90, uid: "41-42-FF-BC-37-BC:output", name: "Headphones", icon: nil, supportsAutoEQ: false)
     private let usb = AudioDevice(id: 95, uid: "usb-dac", name: "USB DAC", icon: nil, supportsAutoEQ: false)
+    private let jack = AudioDevice(id: 77, uid: "BuiltInHeadphoneOutputDevice", name: "External Headphones", icon: nil, supportsAutoEQ: false)
 
     private func makeEngine(priority: [String]) -> (AudioEngine, MockAudioDeviceMonitor, SettingsManager) {
         let settings = SettingsManager(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent("FineTuneTests-\(UUID().uuidString)"))
         settings.setDevicePriorityOrder(priority)
         let monitor = MockAudioDeviceMonitor()
-        for device in [speakers, display, headphones, usb] { monitor.addOutputDevice(device) }
+        for device in [speakers, display, headphones, usb, jack] { monitor.addOutputDevice(device) }
         let volume = MockDeviceVolumeProviding(deviceMonitor: monitor)
         volume.defaultDeviceID = speakers.id
         volume.defaultDeviceUID = speakers.uid
@@ -32,6 +33,7 @@ struct BluetoothConnectPriorityTests {
             deviceVolumeMonitor: volume,
             isAlive: { _ in true },
             isBluetooth: { $0 == bluetoothID },
+            isWiredHeadphones: { $0.uid == "BuiltInHeadphoneOutputDevice" },
             startMonitorsAutomatically: false
         )
         return (engine, monitor, settings)
@@ -60,6 +62,20 @@ struct BluetoothConnectPriorityTests {
         monitor.onDeviceConnected?(usb.uid, usb.name)
         #expect(settings.devicePriorityOrder == [speakers.uid, display.uid, usb.uid])
         _ = engine
+    }
+
+    @Test("Wired headphones on the jack also become the top priority")
+    func wiredHeadphonesGoToTop() {
+        let (engine, monitor, settings) = makeEngine(priority: [speakers.uid, display.uid, jack.uid])
+        monitor.onDeviceConnected?(jack.uid, jack.name)
+        #expect(settings.devicePriorityOrder == [jack.uid, speakers.uid, display.uid])
+        _ = engine
+    }
+
+    @Test("The default wired-headphones check recognises the built-in jack device by UID")
+    func jackUIDIsRecognised() {
+        #expect(AudioDeviceID(0).isWiredHeadphoneOutput(uid: "BuiltInHeadphoneOutputDevice"))
+        #expect(!AudioDeviceID(0).isWiredHeadphoneOutput(uid: "BuiltInSpeakerDevice"))
     }
 
     @Test("Promoting is idempotent and keeps every other device in order")

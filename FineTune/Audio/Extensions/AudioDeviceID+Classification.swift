@@ -91,6 +91,13 @@ extension AudioDeviceID {
         return true
     }
 
+    /// Returns `true` for wired headphones on the built-in jack. Recent Macs expose them as
+    /// their own `BuiltInHeadphoneOutputDevice`; older ones switch the built-in device's data source.
+    func isWiredHeadphoneOutput(uid: String) -> Bool {
+        if uid == "BuiltInHeadphoneOutputDevice" { return true }
+        return readTransportType() == .builtIn && builtInHasHeadphonesActive()
+    }
+
     /// Checks if the built-in audio device currently has headphones plugged in
     /// by reading the active data source ID.
     func builtInHasHeadphonesActive() -> Bool {
