@@ -39,6 +39,7 @@ jobs:
             -scheme FineTune \
             -configuration Debug \
             -skip-testing:FineTuneUITests \
+            -skip-testing:FineTuneTests/VisualSnapshotTests \
             CODE_SIGN_IDENTITY=- \
             CODE_SIGNING_REQUIRED=NO \
             -resultBundlePath build/TestResults.xcresult

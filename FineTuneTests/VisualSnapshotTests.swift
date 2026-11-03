@@ -9,6 +9,7 @@ import Testing
 ///
 /// Reference images live in `__Snapshots__/VisualSnapshotTests/`. To re-record after an
 /// intended visual change, delete the affected images and run the tests twice.
+/// Skipped in CI: the runner's macOS and Xcode render text slightly differently.
 @Suite("Visual snapshots")
 @MainActor
 struct VisualSnapshotTests {
