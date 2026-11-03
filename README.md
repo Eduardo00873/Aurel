@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/icon-dark.png">
-    <img src="assets/icon.png" width="160" height="160" alt="Aurel app icon">
-  </picture>
+  <img src="assets/icon.png" width="160" height="160" alt="Aurel app icon">
 </p>
 
 <h1 align="center">Aurel</h1>
