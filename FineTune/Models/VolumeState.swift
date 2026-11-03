@@ -31,7 +31,7 @@ final class VolumeState {
     // MARK: - Volume
 
     func getVolume(for pid: pid_t) -> Float {
-        states[pid]?.volume ?? (settingsManager?.appSettings.defaultNewAppVolume ?? 1.0)
+        states[pid]?.volume ?? (settingsManager?.appSettings.defaultNewAppGain ?? 1.0)
     }
 
     func setVolume(for pid: pid_t, to volume: Float, identifier: String? = nil) {
@@ -73,7 +73,7 @@ final class VolumeState {
             states[pid] = state
             settingsManager?.setBoost(for: state.persistenceIdentifier, to: boost)
         } else if let identifier = identifier {
-            let defaultVolume = settingsManager?.appSettings.defaultNewAppVolume ?? 1.0
+            let defaultVolume = settingsManager?.appSettings.defaultNewAppGain ?? 1.0
             var newState = AppAudioState(volume: defaultVolume, muted: false, persistenceIdentifier: identifier)
             newState.boost = boost
             states[pid] = newState
@@ -105,7 +105,7 @@ final class VolumeState {
             states[pid] = state
             settingsManager?.setMute(for: state.persistenceIdentifier, to: muted)
         } else if let identifier = identifier {
-            let defaultVolume = settingsManager?.appSettings.defaultNewAppVolume ?? 1.0
+            let defaultVolume = settingsManager?.appSettings.defaultNewAppGain ?? 1.0
             states[pid] = AppAudioState(volume: defaultVolume, muted: muted, persistenceIdentifier: identifier)
             settingsManager?.setMute(for: identifier, to: muted)
         }
@@ -136,7 +136,7 @@ final class VolumeState {
             states[pid] = state
             settingsManager?.setDeviceSelectionMode(for: state.persistenceIdentifier, to: mode)
         } else if let identifier = identifier {
-            let defaultVolume = settingsManager?.appSettings.defaultNewAppVolume ?? 1.0
+            let defaultVolume = settingsManager?.appSettings.defaultNewAppGain ?? 1.0
             var newState = AppAudioState(volume: defaultVolume, muted: false, persistenceIdentifier: identifier)
             newState.deviceSelectionMode = mode
             states[pid] = newState
@@ -168,7 +168,7 @@ final class VolumeState {
             states[pid] = state
             settingsManager?.setSelectedDeviceUIDs(for: state.persistenceIdentifier, to: uids)
         } else if let identifier = identifier {
-            let defaultVolume = settingsManager?.appSettings.defaultNewAppVolume ?? 1.0
+            let defaultVolume = settingsManager?.appSettings.defaultNewAppGain ?? 1.0
             var newState = AppAudioState(volume: defaultVolume, muted: false, persistenceIdentifier: identifier)
             newState.selectedDeviceUIDs = uids
             states[pid] = newState
@@ -203,7 +203,7 @@ final class VolumeState {
 
     private func ensureState(for pid: pid_t, identifier: String) {
         if states[pid] == nil {
-            let defaultVolume = settingsManager?.appSettings.defaultNewAppVolume ?? 1.0
+            let defaultVolume = settingsManager?.appSettings.defaultNewAppGain ?? 1.0
             states[pid] = AppAudioState(volume: defaultVolume, muted: false, persistenceIdentifier: identifier)
         } else if states[pid]?.persistenceIdentifier != identifier {
             states[pid]?.persistenceIdentifier = identifier

@@ -130,6 +130,14 @@ struct SettingsJSONTests {
         #expect(decoded.appSettings.defaultNewAppVolume == 1.0,
                 "Negative defaultNewAppVolume should be reset to 1.0")
     }
+
+    @Test("The default volume in Settings is a slider position: 50% shows as 50%")
+    func defaultVolumeIsSliderPosition() {
+        var s = AppSettings()
+        s.defaultNewAppVolume = 0.5
+        #expect(abs(s.defaultNewAppGain - 0.25) < 0.0001)
+        #expect(abs(VolumeMapping.gainToSlider(s.defaultNewAppGain) - 0.5) < 0.0001)
+    }
 }
 
 // MARK: - mergePriorityOrder

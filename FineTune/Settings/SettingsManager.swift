@@ -28,7 +28,13 @@ nonisolated struct AppSettings: Codable, Equatable {
     var menuBarIconStyle: MenuBarIconStyle = .default
 
     // Audio
-    var defaultNewAppVolume: Float = 1.0      // 100% (unity gain)
+    var defaultNewAppVolume: Float = 1.0      // Slider position shown in Settings (1.0 = 100%)
+
+    /// Gain for a new app. `defaultNewAppVolume` is a slider position, so it goes through
+    /// the same curve as the per-app sliders — 50% in Settings shows as 50% in the popup.
+    var defaultNewAppGain: Float {
+        VolumeMapping.sliderToGain(Double(defaultNewAppVolume))
+    }
 
     // Input Device Lock
     var lockInputDevice: Bool = true          // Prevent auto-switching input device
@@ -39,7 +45,6 @@ nonisolated struct AppSettings: Codable, Equatable {
     // Audio Processing
     var loudnessCompensationEnabled: Bool = false  // ISO 226:2023 equal-loudness contour compensation
     var loudnessEqualizationEnabled: Bool = false  // Real-time loudness equalization
-    var callDuckingCompensationEnabled: Bool = true  // Raise apps in a call to offset macOS call ducking
 
     // Media Keys & HUD
     var hudStyle: HUDStyle = .tahoe                // Visual style of the volume HUD
@@ -73,7 +78,6 @@ nonisolated struct AppSettings: Codable, Equatable {
         showDeviceDisconnectAlerts = try c.decodeIfPresent(Bool.self, forKey: .showDeviceDisconnectAlerts) ?? true
         loudnessCompensationEnabled = try c.decodeIfPresent(Bool.self, forKey: .loudnessCompensationEnabled) ?? false
         loudnessEqualizationEnabled = try c.decodeIfPresent(Bool.self, forKey: .loudnessEqualizationEnabled) ?? false
-        callDuckingCompensationEnabled = try c.decodeIfPresent(Bool.self, forKey: .callDuckingCompensationEnabled) ?? true
         hudStyle = try c.decodeIfPresent(HUDStyle.self, forKey: .hudStyle) ?? .tahoe
         mediaKeyControlEnabled = try c.decodeIfPresent(Bool.self, forKey: .mediaKeyControlEnabled) ?? true
         volumeHotkeyStep = try c.decodeIfPresent(VolumeHotkeyStep.self, forKey: .volumeHotkeyStep) ?? .normal
