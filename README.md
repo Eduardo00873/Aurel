@@ -19,7 +19,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/popup-dark.png" width="820" alt="Aurel menu bar panel with system output and per-app volume">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/popup-light.png">
+    <img src="assets/screenshots/popup-dark.png" width="820" alt="Aurel menu bar panel with system output and per-app volume">
+  </picture>
 </p>
 
 Music up, notifications down, the video call exactly where you want it. Aurel gives each app its own volume, mute and output — without extra drivers, accounts or clutter.
@@ -34,37 +37,25 @@ Music up, notifications down, the video call exactly where you want it. Aurel gi
 - **Keyboard friendly** — move with ↑ ↓, adjust with ← →, press M to mute, or type a number to set a level.
 - **Feels built in** — native controls, Liquid Glass on macOS 26, and full support for light and dark appearance.
 
-<!--
-  SCREENSHOT GALLERY — ready to enable once more captures exist.
-  1. Capture the panel or window (⌘⇧4, then Space, then click it).
-  2. Note the panel's edges in pixels and run:
-     swift scripts/readme-screenshot.swift capture.png assets/screenshots/<name>.png <left> <top> <right> <bottom>
-  3. Remove the comment markers around this section.
-
 ## Screenshots
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="assets/screenshots/popup-light.png" alt="Menu bar panel in light mode"><br>
-      <sub><b>Menu bar panel</b> · light</sub>
+      <img src="assets/screenshots/popup-dark.png" alt="Aurel menu bar panel in dark mode"><br>
+      <sub><b>Dark</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="assets/screenshots/output-menu.png" alt="Per-app output menu"><br>
-      <sub><b>Per-app output</b> · follow the system or pin a device</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="assets/screenshots/settings.png" alt="Aurel Settings window"><br>
-      <sub><b>Settings</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="assets/screenshots/hud.png" alt="Volume overlay"><br>
-      <sub><b>Volume overlay</b> · media keys</sub>
+      <img src="assets/screenshots/popup-light.png" alt="Aurel menu bar panel in light mode"><br>
+      <sub><b>Light</b></sub>
     </td>
   </tr>
 </table>
+
+<!--
+  More screenshots: capture the panel or window (⌘⇧4, Space, click), then run
+  swift scripts/readme-screenshot.swift capture.png assets/screenshots/<name>.png <left> <top> <right> <bottom>
+  and add a row above (e.g. output-menu.png, settings.png).
 -->
 
 ## Private by design
