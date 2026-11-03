@@ -90,7 +90,7 @@ struct MenuBarPopupView: View {
             WindowAppearanceBridge(appearance: audioEngine.settingsManager.appSettings.appearance.nsAppearance)
                 .frame(width: 0, height: 0)
         )
-        .darkGlassBackground()
+        .background(DesignTokens.Palette.background)
         .preferredColorScheme(audioEngine.settingsManager.appSettings.appearance.swiftUIColorScheme)
         .environment(\.appearancePreference, audioEngine.settingsManager.appSettings.appearance)
         .onAppear {
@@ -185,9 +185,7 @@ struct MenuBarPopupView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: DesignTokens.Spacing.xs) {
-            Divider()
-                .padding(.horizontal, DesignTokens.Spacing.sm)
+        VStack(spacing: 0) {
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
@@ -204,6 +202,8 @@ struct MenuBarPopupView: View {
             .keyboardShortcut("q", modifiers: .command)
             .help("Quit Aurel (⌘Q)")
         }
+        .padding(DesignTokens.Spacing.xs)
+        .popupCard()
     }
 
     // MARK: - Main Content
@@ -221,11 +221,15 @@ struct MenuBarPopupView: View {
                         audioEngine.setDefaultOutputDevice(device.id)
                     }
                 )
+                .padding(DesignTokens.Spacing.xs)
+                .popupCard()
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 sectionTitle("Applications")
                 appsContent
+                    .padding(DesignTokens.Spacing.xs)
+                    .popupCard()
                 hiddenAppsSection
             }
         }
@@ -236,7 +240,7 @@ struct MenuBarPopupView: View {
         Text(title)
             .font(DesignTokens.Typography.sectionTitle)
             .foregroundStyle(DesignTokens.Palette.textSecondary)
-            .padding(.horizontal, DesignTokens.Spacing.sm)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -257,7 +261,11 @@ struct MenuBarPopupView: View {
             emptyStateView
         } else {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-                ForEach(audioEngine.displayableApps) { displayableApp in
+                ForEach(Array(audioEngine.displayableApps.enumerated()), id: \.element.id) { index, displayableApp in
+                    if index > 0 {
+                        Divider()
+                            .padding(.horizontal, DesignTokens.Spacing.sm)
+                    }
                     switch displayableApp {
                     case .active(let app):
                         activeAppRow(app: app, id: displayableApp.id)
@@ -454,6 +462,9 @@ struct MenuBarPopupView: View {
                     }
                 }
             }
+            .padding(DesignTokens.Spacing.xs)
+            .popupCard()
+            .padding(.top, DesignTokens.Spacing.xs)
         }
     }
 
@@ -721,5 +732,17 @@ private struct PopupIconButtonBody: View {
             .onHover { isHovered = $0 }
             .animation(DesignTokens.Animation.hover, value: isHovered)
             .animation(DesignTokens.Animation.quick, value: configuration.isPressed)
+    }
+}
+
+private extension View {
+    /// Card surface shared with the Settings window: surface fill, hairline border, 12 pt corners.
+    func popupCard() -> some View {
+        background(DesignTokens.Palette.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.large, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.large, style: .continuous)
+                    .strokeBorder(DesignTokens.Palette.border, lineWidth: 0.5)
+            }
     }
 }
