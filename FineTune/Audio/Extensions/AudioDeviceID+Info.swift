@@ -42,6 +42,11 @@ nonisolated extension AudioObjectID {
         (try? readBool(kAudioProcessPropertyIsRunning)) ?? false
     }
 
+    /// True while the process is capturing audio input (e.g. the microphone during a call).
+    func readProcessIsRunningInput() -> Bool {
+        (try? readBool(kAudioProcessPropertyIsRunningInput)) ?? false
+    }
+
     func readProcessBundleID() -> String? {
         try? readString(kAudioProcessPropertyBundleID)
     }

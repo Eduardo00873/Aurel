@@ -35,6 +35,19 @@ final class AudioEngine {
     /// Closure to check if a device is wired headphones. Overridable for testing.
     private let isWiredHeadphonesCheck: (AudioDevice) -> Bool
 
+    /// Closure to check if an app is capturing audio input (a call). Overridable for testing.
+    private let isRunningInputCheck: (AudioApp) -> Bool
+
+    /// Apps currently in a call (capturing input). During a call macOS ducks every other
+    /// process — including Aurel, which replays the calling app's audio — so these apps
+    /// get `callDuckingCompensationGain` on top of their volume.
+    private(set) var callActivePIDs: Set<pid_t> = []
+
+    /// +20 dB, the call ducking attenuation reported for macOS voice processing.
+    static let callDuckingCompensationGain: Float = 10
+
+    private var callMonitorTask: Task<Void, Never>?
+
     /// One-shot HAL listeners for devices that were present but not alive during priority resolution.
     /// Keyed by AudioDeviceID. Each entry holds the device UID, listener block, and a timeout task.
     private var aliveWatchers: [AudioDeviceID: (uid: String, block: AudioObjectPropertyListenerBlock, timeout: Task<Void, Never>)] = [:]
@@ -188,6 +201,7 @@ final class AudioEngine {
         isAlive: ((AudioDeviceID) -> Bool)? = nil,
         isBluetooth: ((AudioDeviceID) -> Bool)? = nil,
         isWiredHeadphones: ((AudioDevice) -> Bool)? = nil,
+        isRunningInput: ((AudioApp) -> Bool)? = nil,
         startMonitorsAutomatically: Bool = true
     ) {
         self.permission = permission
@@ -199,6 +213,7 @@ final class AudioEngine {
         self.isAliveCheck = isAlive ?? { $0.isDeviceAlive() }
         self.isBluetoothCheck = isBluetooth ?? { $0.isBluetoothDevice() }
         self.isWiredHeadphonesCheck = isWiredHeadphones ?? { $0.id.isWiredHeadphoneOutput(uid: $0.uid) }
+        self.isRunningInputCheck = isRunningInput ?? { $0.processObjectIDs.contains { $0.readProcessIsRunningInput() } }
 
         // If a custom deviceProvider is given, use it directly.
         // Otherwise create a real AudioDeviceMonitor (needed by DeviceVolumeMonitor and default tap factory).
@@ -271,6 +286,7 @@ final class AudioEngine {
         wireCallbacks()
 
         if startMonitorsAutomatically {
+            startCallMonitor()
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if self.permission.status == .authorized {
@@ -686,7 +702,10 @@ final class AudioEngine {
     /// device's software gain; multi-destination routing keeps `appGain` alone
     /// because per-device software gain has no unambiguous meaning across fan-out.
     private func effectiveVolume(for pid: pid_t, deviceUIDs: [String]? = nil) -> Float {
-        let appGain = volumeState.getVolume(for: pid) * volumeState.getBoost(for: pid).rawValue
+        var appGain = volumeState.getVolume(for: pid) * volumeState.getBoost(for: pid).rawValue
+        if callActivePIDs.contains(pid) && settingsManager.appSettings.callDuckingCompensationEnabled {
+            appGain *= Self.callDuckingCompensationGain
+        }
 
         guard let resolvedUIDs = deviceUIDs, resolvedUIDs.count == 1,
               let primaryUID = resolvedUIDs.first,
@@ -808,6 +827,42 @@ final class AudioEngine {
     func setLoudnessCompensationEnabled(_ enabled: Bool) {
         for tap in taps.values {
             tap.updateLoudnessCompensation(volume: effectiveLoudnessVolume(for: tap), enabled: enabled)
+        }
+    }
+
+    // MARK: - Call ducking compensation
+
+    /// Polls once a second for apps in a call; the HAL has no single "call started" event.
+    private func startCallMonitor() {
+        callMonitorTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                self?.refreshCallState()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+    }
+
+    /// Re-detects which tapped apps are in a call and re-applies volume to any that changed.
+    func refreshCallState() {
+        let current = Dictionary(processMonitor.activeApps.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var inCall: Set<pid_t> = []
+        for (pid, tap) in taps where isRunningInputCheck(current[pid] ?? tap.app) {
+            inCall.insert(pid)
+        }
+        guard inCall != callActivePIDs else { return }
+        let changed = inCall.symmetricDifference(callActivePIDs)
+        callActivePIDs = inCall
+        logger.info("[CALL] Apps in a call: \(inCall.sorted())")
+        for pid in changed {
+            guard let tap = taps[pid] else { continue }
+            tap.volume = effectiveVolume(for: pid, deviceUIDs: tap.currentDeviceUIDs)
+        }
+    }
+
+    func setCallDuckingCompensationEnabled(_ enabled: Bool) {
+        for pid in callActivePIDs {
+            guard let tap = taps[pid] else { continue }
+            tap.volume = effectiveVolume(for: pid, deviceUIDs: tap.currentDeviceUIDs)
         }
     }
 

@@ -14,6 +14,7 @@ struct AudioTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 volumeSection
+                callsSection
                 devicesSection
             }
             .padding(.horizontal, 20)
@@ -34,6 +35,9 @@ struct AudioTab: View {
         .onChange(of: settings.appSettings.loudnessEqualizationEnabled) { _, newValue in
             audioEngine.setLoudnessEqualizationEnabled(newValue)
         }
+        .onChange(of: settings.appSettings.callDuckingCompensationEnabled) { _, newValue in
+            audioEngine.setCallDuckingCompensationEnabled(newValue)
+        }
     }
 
     // MARK: - Volume
@@ -49,6 +53,22 @@ struct AudioTab: View {
                     range: 0.1...1.0,
                     width: 280
                 )
+            }
+        }
+    }
+
+    // MARK: - Calls
+
+    private var callsSection: some View {
+        SettingsSection("Calls") {
+            SettingsRow(
+                "Keep Calls Loud",
+                description: "macOS lowers other audio during a call. Raise the calling app to make up for it."
+            ) {
+                Toggle("", isOn: $settings.appSettings.callDuckingCompensationEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
             }
         }
     }
