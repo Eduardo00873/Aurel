@@ -120,17 +120,11 @@ struct VolumeMappingTierTests {
         #expect(abs(VolumeMapping.systemGain(forSliderFraction: 0.3, tier: .hardware) - 0.3) < 1e-6)
     }
 
-    @Test("DDC tier: identity in both directions")
-    func ddcIdentity() {
-        #expect(abs(VolumeMapping.sliderFraction(forSystemGain: 0.7, tier: .ddc) - 0.7) < 1e-6)
-        #expect(abs(VolumeMapping.systemGain(forSliderFraction: 0.7, tier: .ddc) - 0.7) < 1e-6)
-    }
-
     @Test("All tiers clamp out-of-range input")
     func clampsOutOfRange() {
         #expect(VolumeMapping.sliderFraction(forSystemGain: -0.1, tier: .software) == 0)
         #expect(VolumeMapping.sliderFraction(forSystemGain:  1.5, tier: .hardware) == 1.0)
-        #expect(VolumeMapping.systemGain(forSliderFraction: -0.1, tier: .ddc) == 0)
+        #expect(VolumeMapping.systemGain(forSliderFraction: -0.1, tier: .hardware) == 0)
         #expect(VolumeMapping.systemGain(forSliderFraction:  1.5, tier: .software) == 1.0)
     }
 }
@@ -172,12 +166,20 @@ struct BoostLevelTests {
         #expect(BoostLevel.x4.isBoosted)
     }
 
+    @Test("Menu titles show the multiplier and its gain in dB")
+    func menuTitles() {
+        #expect(BoostLevel.x1.menuTitle == "Off")
+        #expect(BoostLevel.x2.menuTitle == "2× (+6 dB)")
+        #expect(BoostLevel.x4.menuTitle == "4× (+12 dB)")
+        #expect(!BoostLevel.x1.isBoosted && BoostLevel.x3.isBoosted)
+    }
+
     @Test("Labels match expected format",
           arguments: [
-            (BoostLevel.x1, "1x"),
-            (BoostLevel.x2, "2x"),
-            (BoostLevel.x3, "3x"),
-            (BoostLevel.x4, "4x"),
+            (BoostLevel.x1, "1×"),
+            (BoostLevel.x2, "2×"),
+            (BoostLevel.x3, "3×"),
+            (BoostLevel.x4, "4×"),
           ])
     func labels(level: BoostLevel, expected: String) {
         #expect(level.label == expected)

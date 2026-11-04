@@ -85,13 +85,6 @@ final class AppListCoordinator {
         settingsManager.setMute(for: identifier, to: muted)
     }
 
-    func getEQSettingsForInactive(identifier: String) -> EQSettings {
-        settingsManager.getEQSettings(for: identifier)
-    }
-
-    func setEQSettingsForInactive(_ settings: EQSettings, identifier: String) {
-        settingsManager.setEQSettings(settings, for: identifier)
-    }
 
     func getDeviceRoutingForInactive(identifier: String) -> String? {
         settingsManager.getDeviceRouting(for: identifier)
@@ -109,19 +102,4 @@ final class AppListCoordinator {
         settingsManager.isFollowingDefault(for: identifier)
     }
 
-    func getDeviceSelectionModeForInactive(identifier: String) -> DeviceSelectionMode {
-        settingsManager.getDeviceSelectionMode(for: identifier) ?? .single
-    }
-
-    func setDeviceSelectionModeForInactive(identifier: String, to mode: DeviceSelectionMode) {
-        settingsManager.setDeviceSelectionMode(for: identifier, to: mode)
-    }
-
-    func getSelectedDeviceUIDsForInactive(identifier: String) -> Set<String> {
-        settingsManager.getSelectedDeviceUIDs(for: identifier) ?? []
-    }
-
-    func setSelectedDeviceUIDsForInactive(identifier: String, to uids: Set<String>) {
-        settingsManager.setSelectedDeviceUIDs(for: identifier, to: uids)
-    }
 }

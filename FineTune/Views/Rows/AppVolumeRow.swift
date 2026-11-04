@@ -10,6 +10,9 @@ struct AppVolumeRow<Output: View>: View {
     let isMuted: Bool
     var isInactive: Bool = false
     var isFocused: Bool = false
+    var boost: BoostLevel = .x1
+    /// Shows the Amplify control when set.
+    var onBoostChange: ((BoostLevel) -> Void)? = nil
     let onVolumeChange: (Float) -> Void
     let onMuteChange: (Bool) -> Void
     var onIconTap: (() -> Void)? = nil
@@ -80,6 +83,10 @@ struct AppVolumeRow<Output: View>: View {
                 )
                 .opacity(showMutedIcon ? 0.45 : 1)
                 .scrollWheelStep(sliderBinding, in: 0.0...1.0)
+
+                if let onBoostChange {
+                    BoostButton(boost: boost, onChange: onBoostChange)
+                }
 
                 MuteButton(isMuted: showMutedIcon, levelFraction: sliderValue) {
                     if showMutedIcon {

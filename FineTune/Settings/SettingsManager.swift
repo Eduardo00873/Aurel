@@ -43,7 +43,6 @@ nonisolated struct AppSettings: Codable, Equatable {
     var showDeviceDisconnectAlerts: Bool = true
 
     // Audio Processing
-    var loudnessCompensationEnabled: Bool = false  // ISO 226:2023 equal-loudness contour compensation
     var loudnessEqualizationEnabled: Bool = false  // Real-time loudness equalization
 
     // Media Keys & HUD
@@ -64,10 +63,6 @@ nonisolated struct AppSettings: Codable, Equatable {
 
     init() {}
 
-    mutating func setUnifiedLoudnessEnabled(_ enabled: Bool) {
-        loudnessCompensationEnabled = enabled
-        loudnessEqualizationEnabled = enabled
-    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -76,7 +71,6 @@ nonisolated struct AppSettings: Codable, Equatable {
         defaultNewAppVolume = try c.decodeIfPresent(Float.self, forKey: .defaultNewAppVolume) ?? 1.0
         lockInputDevice = try c.decodeIfPresent(Bool.self, forKey: .lockInputDevice) ?? true
         showDeviceDisconnectAlerts = try c.decodeIfPresent(Bool.self, forKey: .showDeviceDisconnectAlerts) ?? true
-        loudnessCompensationEnabled = try c.decodeIfPresent(Bool.self, forKey: .loudnessCompensationEnabled) ?? false
         loudnessEqualizationEnabled = try c.decodeIfPresent(Bool.self, forKey: .loudnessEqualizationEnabled) ?? false
         hudStyle = try c.decodeIfPresent(HUDStyle.self, forKey: .hudStyle) ?? .tahoe
         mediaKeyControlEnabled = try c.decodeIfPresent(Bool.self, forKey: .mediaKeyControlEnabled) ?? true
@@ -103,11 +97,8 @@ final class SettingsManager {
         var appDeviceRouting: [String: String] = [:]  // bundleID → deviceUID
         var appMutes: [String: Bool] = [:]  // bundleID → isMuted
         var appBoosts: [String: Float] = [:]  // bundleID → boost rawValue (1.0, 2.0, 3.0, 4.0)
-        var appEQSettings: [String: EQSettings] = [:]  // bundleID → EQ settings
         var appSettings: AppSettings = AppSettings()  // App-wide settings
         var systemSoundsFollowsDefault: Bool = true  // Whether system sounds follows macOS default
-        var appDeviceSelectionMode: [String: DeviceSelectionMode] = [:]  // bundleID → selection mode
-        var appSelectedDeviceUIDs: [String: [String]] = [:]  // bundleID → array of device UIDs for multi mode
         var lockedInputDeviceUID: String? = nil  // Current locked input device (updated on fallback)
         var preferredInputDeviceUID: String? = nil  // User's intended input device (survives disconnect)
         var pinnedApps: Set<String> = []  // Persistence identifiers of pinned apps
@@ -115,10 +106,6 @@ final class SettingsManager {
         var ignoredApps: Set<String> = []  // Persistence identifiers of hidden apps
         var ignoredAppInfo: [String: IgnoredAppInfo] = [:]  // Persistence identifier → app metadata
 
-        // DDC monitor speaker volumes (keyed by CoreAudio device UID for stability across reboots)
-        var ddcVolumes: [String: Int] = [:]       // device UID → volume (0-100)
-        var ddcMuteStates: [String: Bool] = [:]   // device UID → software mute state
-        var ddcSavedVolumes: [String: Int] = [:]  // device UID → volume before mute
 
         // Software-backed output volumes for devices without native volume control
         var softwareDeviceVolumes: [String: Float] = [:]      // device UID → visible volume (0.0-1.0)
@@ -126,7 +113,7 @@ final class SettingsManager {
         var softwareDeviceSavedVolumes: [String: Float] = [:] // device UID → volume before mute
 
         // Per-device volume control tier override (overrides auto-detection).
-        // nil/missing → auto-detect (hardware/ddc/software). Populated only by
+        // nil/missing → auto-detect (hardware/software). Populated only by
         // the user via the device detail sheet's manual override toggle.
         var deviceVolumeTierOverride: [String: VolumeControlTier] = [:]
         var deviceIconOverrides: [String: String] = [:]  // device UID → SF Symbol name
@@ -139,13 +126,6 @@ final class SettingsManager {
         var hiddenOutputDeviceUIDs: Set<String> = []
         var hiddenInputDeviceUIDs: Set<String> = []
 
-        // Per-device AutoEQ headphone correction
-        var deviceAutoEQ: [String: AutoEQSelection] = [:]  // deviceUID → selection
-        var favoriteAutoEQProfiles: Set<String> = []  // profile IDs
-        var autoEQPreampEnabled: Bool = true  // Use profile preamp vs bypass (rely on limiter)
-
-        // User-created EQ presets (named EQ curves)
-        var userEQPresets: [UserEQPreset] = []
 
         init() {}
 
@@ -158,7 +138,6 @@ final class SettingsManager {
             appDeviceRouting = try c.decodeIfPresent([String: String].self, forKey: .appDeviceRouting) ?? [:]
             appMutes = try c.decodeIfPresent([String: Bool].self, forKey: .appMutes) ?? [:]
             appBoosts = try c.decodeIfPresent([String: Float].self, forKey: .appBoosts) ?? [:]
-            appEQSettings = try c.decodeIfPresent([String: EQSettings].self, forKey: .appEQSettings) ?? [:]
             var decodedAppSettings = try c.decodeIfPresent(AppSettings.self, forKey: .appSettings) ?? AppSettings()
             if !decodedAppSettings.defaultNewAppVolume.isFinite || decodedAppSettings.defaultNewAppVolume < 0 {
                 decodedAppSettings.defaultNewAppVolume = 1.0
@@ -166,17 +145,12 @@ final class SettingsManager {
 
             appSettings = decodedAppSettings
             systemSoundsFollowsDefault = try c.decodeIfPresent(Bool.self, forKey: .systemSoundsFollowsDefault) ?? true
-            appDeviceSelectionMode = try c.decodeIfPresent([String: DeviceSelectionMode].self, forKey: .appDeviceSelectionMode) ?? [:]
-            appSelectedDeviceUIDs = try c.decodeIfPresent([String: [String]].self, forKey: .appSelectedDeviceUIDs) ?? [:]
             lockedInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .lockedInputDeviceUID)
             preferredInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .preferredInputDeviceUID)
             pinnedApps = try c.decodeIfPresent(Set<String>.self, forKey: .pinnedApps) ?? []
             pinnedAppInfo = try c.decodeIfPresent([String: PinnedAppInfo].self, forKey: .pinnedAppInfo) ?? [:]
             ignoredApps = try c.decodeIfPresent(Set<String>.self, forKey: .ignoredApps) ?? []
             ignoredAppInfo = try c.decodeIfPresent([String: IgnoredAppInfo].self, forKey: .ignoredAppInfo) ?? [:]
-            ddcVolumes = try c.decodeIfPresent([String: Int].self, forKey: .ddcVolumes) ?? [:]
-            ddcMuteStates = try c.decodeIfPresent([String: Bool].self, forKey: .ddcMuteStates) ?? [:]
-            ddcSavedVolumes = try c.decodeIfPresent([String: Int].self, forKey: .ddcSavedVolumes) ?? [:]
             softwareDeviceVolumes = (try c.decodeIfPresent([String: Float].self, forKey: .softwareDeviceVolumes) ?? [:])
                 .filter { $0.value.isFinite && $0.value >= 0 }
                 .mapValues { min($0, 1.0) }
@@ -190,10 +164,6 @@ final class SettingsManager {
             inputDevicePriority = try c.decodeIfPresent([String].self, forKey: .inputDevicePriority) ?? []
             hiddenOutputDeviceUIDs = try c.decodeIfPresent(Set<String>.self, forKey: .hiddenOutputDeviceUIDs) ?? []
             hiddenInputDeviceUIDs = try c.decodeIfPresent(Set<String>.self, forKey: .hiddenInputDeviceUIDs) ?? []
-            deviceAutoEQ = try c.decodeIfPresent([String: AutoEQSelection].self, forKey: .deviceAutoEQ) ?? [:]
-            favoriteAutoEQProfiles = try c.decodeIfPresent(Set<String>.self, forKey: .favoriteAutoEQProfiles) ?? []
-            autoEQPreampEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoEQPreampEnabled) ?? true
-            userEQPresets = try c.decodeIfPresent([UserEQPreset].self, forKey: .userEQPresets) ?? []
         }
     }
 
@@ -267,38 +237,6 @@ final class SettingsManager {
         scheduleSave()
     }
 
-    func getEQSettings(for appIdentifier: String) -> EQSettings {
-        return settings.appEQSettings[appIdentifier] ?? EQSettings.flat
-    }
-
-    func setEQSettings(_ eqSettings: EQSettings, for appIdentifier: String) {
-        settings.appEQSettings[appIdentifier] = eqSettings
-        scheduleSave()
-    }
-
-    // MARK: - Device Selection Mode
-
-    func getDeviceSelectionMode(for identifier: String) -> DeviceSelectionMode? {
-        settings.appDeviceSelectionMode[identifier]
-    }
-
-    func setDeviceSelectionMode(for identifier: String, to mode: DeviceSelectionMode) {
-        settings.appDeviceSelectionMode[identifier] = mode
-        scheduleSave()
-    }
-
-    // MARK: - Selected Device UIDs (Multi Mode)
-
-    func getSelectedDeviceUIDs(for identifier: String) -> Set<String>? {
-        guard let uids = settings.appSelectedDeviceUIDs[identifier] else { return nil }
-        return Set(uids)
-    }
-
-    func setSelectedDeviceUIDs(for identifier: String, to uids: Set<String>) {
-        settings.appSelectedDeviceUIDs[identifier] = Array(uids)
-        scheduleSave()
-    }
-
     // MARK: - Input Device Lock
 
     var lockedInputDeviceUID: String? {
@@ -355,9 +293,6 @@ final class SettingsManager {
         settings.appBoosts.removeValue(forKey: identifier)
         settings.appMutes.removeValue(forKey: identifier)
         settings.appDeviceRouting.removeValue(forKey: identifier)
-        settings.appEQSettings.removeValue(forKey: identifier)
-        settings.appDeviceSelectionMode.removeValue(forKey: identifier)
-        settings.appSelectedDeviceUIDs.removeValue(forKey: identifier)
         scheduleSave()
     }
 
@@ -373,35 +308,6 @@ final class SettingsManager {
 
     func getIgnoredAppInfo() -> [IgnoredAppInfo] {
         settings.ignoredApps.compactMap { settings.ignoredAppInfo[$0] }
-    }
-
-    // MARK: - DDC Monitor Volume
-
-    func getDDCVolume(for deviceUID: String) -> Int? {
-        settings.ddcVolumes[deviceUID]
-    }
-
-    func setDDCVolume(for deviceUID: String, to volume: Int) {
-        settings.ddcVolumes[deviceUID] = volume
-        scheduleSave()
-    }
-
-    func getDDCMuteState(for deviceUID: String) -> Bool {
-        settings.ddcMuteStates[deviceUID] ?? false
-    }
-
-    func setDDCMuteState(for deviceUID: String, to muted: Bool) {
-        settings.ddcMuteStates[deviceUID] = muted
-        scheduleSave()
-    }
-
-    func getDDCSavedVolume(for deviceUID: String) -> Int? {
-        settings.ddcSavedVolumes[deviceUID]
-    }
-
-    func setDDCSavedVolume(for deviceUID: String, to volume: Int) {
-        settings.ddcSavedVolumes[deviceUID] = volume
-        scheduleSave()
     }
 
     // MARK: - Software Output Device Volume
@@ -657,9 +563,6 @@ final class SettingsManager {
         let allIdentifiers = Set(settings.appVolumes.keys)
             .union(settings.appBoosts.keys)
             .union(settings.appMutes.keys)
-            .union(settings.appEQSettings.keys)
-            .union(settings.appDeviceSelectionMode.keys)
-            .union(settings.appSelectedDeviceUIDs.keys)
 
         var pruned = 0
         for identifier in allIdentifiers {
@@ -673,21 +576,14 @@ final class SettingsManager {
             // Check if all remaining settings are default values
             let volume = settings.appVolumes[identifier]
             let mute = settings.appMutes[identifier]
-            let eq = settings.appEQSettings[identifier]
-            let selectionMode = settings.appDeviceSelectionMode[identifier]
-            let selectedUIDs = settings.appSelectedDeviceUIDs[identifier]
 
             let boost = settings.appBoosts[identifier]
 
             let isDefaultVolume = volume == nil || volume == 1.0
             let isDefaultBoost = boost == nil || boost == BoostLevel.x1.rawValue
             let isDefaultMute = mute == nil || mute == false
-            let isDefaultEQ = eq == nil || eq == .flat
-            let isDefaultSelectionMode = selectionMode == nil
-            let isDefaultSelectedUIDs = selectedUIDs == nil || selectedUIDs?.isEmpty == true
 
-            guard isDefaultVolume && isDefaultBoost && isDefaultMute && isDefaultEQ
-                    && isDefaultSelectionMode && isDefaultSelectedUIDs else {
+            guard isDefaultVolume && isDefaultBoost && isDefaultMute else {
                 continue
             }
 
@@ -695,9 +591,6 @@ final class SettingsManager {
             settings.appVolumes.removeValue(forKey: identifier)
             settings.appBoosts.removeValue(forKey: identifier)
             settings.appMutes.removeValue(forKey: identifier)
-            settings.appEQSettings.removeValue(forKey: identifier)
-            settings.appDeviceSelectionMode.removeValue(forKey: identifier)
-            settings.appSelectedDeviceUIDs.removeValue(forKey: identifier)
             pruned += 1
         }
 
@@ -705,105 +598,6 @@ final class SettingsManager {
             logger.info("Pruned \(pruned) stale app settings entries")
             scheduleSave()
         }
-    }
-
-    // MARK: - Per-Device AutoEQ
-
-    func getAutoEQSelection(for deviceUID: String) -> AutoEQSelection? {
-        settings.deviceAutoEQ[deviceUID]
-    }
-
-    func setAutoEQSelection(for deviceUID: String, to selection: AutoEQSelection?) {
-        settings.deviceAutoEQ[deviceUID] = selection
-        scheduleSave()
-    }
-
-    func favoriteAutoEQProfile(id: String) {
-        settings.favoriteAutoEQProfiles.insert(id)
-        scheduleSave()
-    }
-
-    func unfavoriteAutoEQProfile(id: String) {
-        settings.favoriteAutoEQProfiles.remove(id)
-        scheduleSave()
-    }
-
-    func isAutoEQFavorite(id: String) -> Bool {
-        settings.favoriteAutoEQProfiles.contains(id)
-    }
-
-    var favoriteAutoEQProfileIDs: Set<String> {
-        settings.favoriteAutoEQProfiles
-    }
-
-    var autoEQPreampEnabled: Bool {
-        get { settings.autoEQPreampEnabled }
-        set {
-            settings.autoEQPreampEnabled = newValue
-            scheduleSave()
-        }
-    }
-
-    // MARK: - User EQ Presets
-
-    /// Returns all user-created EQ presets, ordered by creation date (newest first).
-    func getUserPresets() -> [UserEQPreset] {
-        settings.userEQPresets.sorted { $0.createdAt > $1.createdAt }
-    }
-
-    /// Creates a new user EQ preset with the given name and band gains.
-    /// Trims whitespace, falls back to "Untitled" for empty names,
-    /// and auto-suffixes duplicates Finder-style: "Name (2)", "Name (3)", etc.
-    /// Returns the created preset.
-    @discardableResult
-    func createUserPreset(name: String, settings eqSettings: EQSettings) -> UserEQPreset {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let baseName = trimmed.isEmpty ? "Untitled" : trimmed
-        let finalName = uniquePresetName(baseName)
-        let preset = UserEQPreset(name: finalName, settings: eqSettings)
-        settings.userEQPresets.append(preset)
-        scheduleSave()
-        return preset
-    }
-
-    /// Renames an existing user preset. Trims whitespace; rejects empty names (no-op).
-    /// Auto-suffixes if the new name collides with another preset.
-    /// No-op if the preset ID is not found.
-    func updateUserPreset(id: UUID, name: String) {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard let index = settings.userEQPresets.firstIndex(where: { $0.id == id }) else { return }
-        let finalName = uniquePresetName(trimmed, excluding: id)
-        settings.userEQPresets[index].name = finalName
-        scheduleSave()
-    }
-
-    /// Generates a unique preset name by appending (2), (3), etc. if the name
-    /// already exists among user presets. Follows Finder duplicate naming convention.
-    /// - Parameters:
-    ///   - name: The desired base name.
-    ///   - excludeID: A preset ID to exclude from collision checks (used during rename).
-    /// - Returns: A unique name, either the original or with a numeric suffix.
-    private func uniquePresetName(_ name: String, excluding excludeID: UUID? = nil) -> String {
-        let existingNames = Set(
-            settings.userEQPresets
-                .filter { $0.id != excludeID }
-                .map { $0.name }
-        )
-        guard existingNames.contains(name) else { return name }
-
-        var counter = 2
-        while true {
-            let candidate = "\(name) (\(counter))"
-            if !existingNames.contains(candidate) { return candidate }
-            counter += 1
-        }
-    }
-
-    /// Deletes a user preset by ID. No-op if the preset ID is not found.
-    func deleteUserPreset(id: UUID) {
-        settings.userEQPresets.removeAll { $0.id == id }
-        scheduleSave()
     }
 
     // MARK: - App-Wide Settings
@@ -849,7 +643,6 @@ final class SettingsManager {
         settings.appBoosts.removeAll()
         settings.appDeviceRouting.removeAll()
         settings.appMutes.removeAll()
-        settings.appEQSettings.removeAll()
         settings.pinnedApps.removeAll()
         settings.pinnedAppInfo.removeAll()
         settings.ignoredApps.removeAll()
@@ -858,9 +651,6 @@ final class SettingsManager {
         settings.systemSoundsFollowsDefault = true
         settings.lockedInputDeviceUID = nil
         settings.preferredInputDeviceUID = nil
-        settings.ddcVolumes.removeAll()
-        settings.ddcMuteStates.removeAll()
-        settings.ddcSavedVolumes.removeAll()
         settings.softwareDeviceVolumes.removeAll()
         settings.softwareDeviceMuteStates.removeAll()
         settings.softwareDeviceSavedVolumes.removeAll()
@@ -870,12 +660,6 @@ final class SettingsManager {
         settings.inputDevicePriority.removeAll()
         settings.hiddenOutputDeviceUIDs.removeAll()
         settings.hiddenInputDeviceUIDs.removeAll()
-        settings.autoEQPreampEnabled = true
-        settings.deviceAutoEQ.removeAll()
-        settings.favoriteAutoEQProfiles.removeAll()
-        settings.appDeviceSelectionMode.removeAll()
-        settings.appSelectedDeviceUIDs.removeAll()
-        settings.userEQPresets.removeAll()
 
         // Also unregister from launch at login
         try? SMAppService.mainApp.unregister()
@@ -890,7 +674,7 @@ final class SettingsManager {
         do {
             let data = try Data(contentsOf: settingsURL)
             settings = try JSONDecoder().decode(Settings.self, from: data)
-            logger.debug("Loaded settings with \(self.settings.appVolumes.count) volumes, \(self.settings.appDeviceRouting.count) device routings, \(self.settings.appMutes.count) mutes, \(self.settings.appEQSettings.count) EQ settings")
+            logger.debug("Loaded settings with \(self.settings.appVolumes.count) volumes, \(self.settings.appDeviceRouting.count) device routings, \(self.settings.appMutes.count) mutes")
         } catch {
             logger.error("Failed to load settings: \(error.localizedDescription)")
             // Backup corrupted file before resetting

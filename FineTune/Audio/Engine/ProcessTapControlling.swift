@@ -19,10 +19,6 @@ protocol ProcessTapControlling: AnyObject, Sendable {
     func activate(initial: TapInitialState) throws
     func invalidate()
     func invalidateAsync() async
-    func updateEQSettings(_ settings: EQSettings)
-    func updateAutoEQProfile(_ profile: AutoEQProfile?)
-    func setAutoEQPreampEnabled(_ enabled: Bool)
-    func updateLoudnessCompensation(volume: Float, enabled: Bool)
     func updateLoudnessEqualization(_ settings: LoudnessEqualizerSettings)
     func switchDevice(to newDeviceUID: String, preferredTapSourceDeviceUID: String?, sourceDeviceDead: Bool) async throws
     func updateDevices(to newDeviceUIDs: [String], preferredTapSourceDeviceUID: String?, sourceDeviceDead: Bool) async throws
@@ -37,7 +33,7 @@ protocol ProcessTapControlling: AnyObject, Sendable {
 extension ProcessTapControlling {
     /// Convenience activation with default state. Production callers must pass an
     /// `initial:` populated from persisted settings — defaults leave the first audio
-    /// callbacks running with no EQ/AutoEQ/Loudness and unity volume ramp.
+    /// callbacks running with no volume leveling and unity volume ramp.
     func activate() throws {
         try activate(initial: TapInitialState())
     }

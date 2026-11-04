@@ -2,8 +2,14 @@ import AudioToolbox
 
 enum VolumeControlTier: String, Codable, Equatable {
     case hardware
-    case ddc
     case software
+
+    /// Unknown values (such as the removed "ddc" tier) decode as software so older
+    /// settings files keep loading.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = VolumeControlTier(rawValue: raw) ?? .software
+    }
 }
 
 @MainActor
@@ -46,9 +52,6 @@ protocol DeviceVolumeProviding: AnyObject {
     func start()
     func stop()
 
-    /// Called after DDC probe completes to refresh volume/mute states.
-    /// Default implementation is a no-op (only relevant for DDC-capable monitors).
-    func refreshAfterDDCProbe()
 }
 
 extension DeviceVolumeProviding {
@@ -64,5 +67,4 @@ extension DeviceVolumeProviding {
         outputVolumeBackend(for: deviceID)
     }
 
-    func refreshAfterDDCProbe() {}
 }

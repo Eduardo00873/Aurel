@@ -46,10 +46,11 @@ struct VisualSnapshotTests {
         NSImage(systemSymbolName: "music.note", accessibilityDescription: nil) ?? NSImage()
     }
 
-    private func row(volume: Float, isMuted: Bool = false, isInactive: Bool = false) -> some View {
+    private func row(volume: Float, isMuted: Bool = false, isInactive: Bool = false, boost: BoostLevel = .x1) -> some View {
         AppVolumeRow(
             icon: appIcon, name: "Music", volume: volume, isMuted: isMuted,
-            isInactive: isInactive, onVolumeChange: { _ in }, onMuteChange: { _ in }
+            isInactive: isInactive, boost: boost, onBoostChange: { _ in },
+            onVolumeChange: { _ in }, onMuteChange: { _ in }
         ) { EmptyView() }
             .padding(.horizontal, DesignTokens.Spacing.md)
     }
@@ -64,6 +65,10 @@ struct VisualSnapshotTests {
 
     @Test func testAppVolumeRowInactive() {
         assertAppearances(row(volume: 0.8, isInactive: true), width: 340, height: 56)
+    }
+
+    @Test func testAppVolumeRowBoosted() {
+        assertAppearances(row(volume: 0.5, boost: .x2), width: 340, height: 56)
     }
 
     @Test func testSettingsSidebar() {

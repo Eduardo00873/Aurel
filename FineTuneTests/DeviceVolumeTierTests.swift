@@ -22,7 +22,7 @@ import AppKit
 struct VolumeControlTierCodableTests {
     @Test("All cases round-trip through JSON as their raw String value")
     func roundTripAllCases() throws {
-        for tier in [VolumeControlTier.hardware, .ddc, .software] {
+        for tier in [VolumeControlTier.hardware, .software] {
             let data = try JSONEncoder().encode(tier)
             let decoded = try JSONDecoder().decode(VolumeControlTier.self, from: data)
             #expect(decoded == tier)
@@ -40,7 +40,6 @@ struct VolumeControlTierCodableTests {
     func dictionaryRoundTrip() throws {
         let original: [String: VolumeControlTier] = [
             "uid-a": .hardware,
-            "uid-b": .ddc,
             "uid-c": .software
         ]
         let data = try JSONEncoder().encode(original)
@@ -233,7 +232,7 @@ struct MockDeviceVolumeProvidingContractTests {
     @Test("overridesByUID resolves to the correct AudioDeviceID via the device monitor")
     func overrideResolutionByUID() {
         let monitor = MockAudioDeviceMonitor()
-        let device = AudioDevice(id: 42, uid: "uid-dac", name: "DAC", icon: nil, supportsAutoEQ: false)
+        let device = AudioDevice(id: 42, uid: "uid-dac", name: "DAC", icon: nil)
         monitor.addOutputDevice(device)
 
         let mock = MockDeviceVolumeProviding(deviceMonitor: monitor)
@@ -386,7 +385,8 @@ struct SettingsMigrationV10toV11Tests {
         let decoded = try JSONDecoder().decode(SettingsManager.Settings.self, from: Data(json.utf8))
         #expect(decoded.version == 11)
         #expect(decoded.deviceVolumeTierOverride["uid-usb-interface"] == .software)
-        #expect(decoded.deviceVolumeTierOverride["uid-external-display"] == .ddc)
+        // The removed "ddc" tier decodes as software so old settings keep loading.
+        #expect(decoded.deviceVolumeTierOverride["uid-external-display"] == .software)
         #expect(decoded.softwareDeviceVolumes["uid-usb-interface"] == 0.6)
         #expect(decoded.softwareDeviceMuteStates["uid-usb-interface"] == false)
         #expect(decoded.softwareDeviceSavedVolumes["uid-usb-interface"] == 0.6)
@@ -404,7 +404,6 @@ struct SettingsManagerDeviceVolumeTierOverrideRoundTrip {
         var original = SettingsManager.Settings()
         original.deviceVolumeTierOverride = [
             "uid-hw": .hardware,
-            "uid-ddc": .ddc,
             "uid-sw": .software
         ]
         let data = try JSONEncoder().encode(original)
@@ -423,17 +422,17 @@ struct SettingsManagerDeviceVolumeTierOverrideRoundTrip {
 
 @Suite("DeviceVolumeMonitor.storedVolume — tier-aware silence floor")
 struct DeviceVolumeStoredVolumeTests {
-    @Test("Hardware/DDC floor sub-1% scalar to true silence")
+    @Test("Hardware floors sub-1% scalar to true silence")
     func hardwareDdcFloorBelowOnePercent() {
         #expect(DeviceVolumeMonitor.storedVolume(0.005, tier: .hardware) == 0)
-        #expect(DeviceVolumeMonitor.storedVolume(0.009, tier: .ddc) == 0)
+        #expect(DeviceVolumeMonitor.storedVolume(0.009, tier: .hardware) == 0)
         #expect(DeviceVolumeMonitor.storedVolume(0.0039, tier: .hardware) == 0)
     }
 
-    @Test("Hardware/DDC keep values at or above the 1% floor")
+    @Test("Hardware keeps values at or above the 1% floor")
     func hardwareDdcKeepAboveFloor() {
         #expect(DeviceVolumeMonitor.storedVolume(0.01, tier: .hardware) == 0.01)
-        #expect(DeviceVolumeMonitor.storedVolume(0.5, tier: .ddc) == 0.5)
+        #expect(DeviceVolumeMonitor.storedVolume(0.5, tier: .hardware) == 0.5)
     }
 
     @Test("Software tier is never floored — preserves sub-1% gain (issue #295)")

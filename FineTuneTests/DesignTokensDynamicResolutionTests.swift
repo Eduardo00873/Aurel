@@ -99,38 +99,6 @@ struct DesignTokensDynamicResolutionTests {
                     in: Self.darkAqua)
     }
 
-    @Test("autoEQEmptyBorder resolves correctly in light and dark")
-    func autoEQEmptyBorder() {
-        expectColor(DesignTokens.Colors.autoEQEmptyBorder,
-                    equals: NSColor.black.withAlphaComponent(0.22),
-                    in: Self.aqua)
-        expectColor(DesignTokens.Colors.autoEQEmptyBorder,
-                    equals: NSColor.white.withAlphaComponent(0.1),
-                    in: Self.darkAqua)
-    }
-
-    @Test("autoEQEmptyIcon resolves correctly in light and dark")
-    func autoEQEmptyIcon() {
-        expectColor(DesignTokens.Colors.autoEQEmptyIcon,
-                    equals: NSColor(white: 0.45, alpha: 1.0),
-                    in: Self.aqua)
-        expectColor(DesignTokens.Colors.autoEQEmptyIcon,
-                    equals: NSColor(white: 0.267, alpha: 1.0),
-                    in: Self.darkAqua)
-    }
-
-    @Test("autoEQToggleLabel resolves correctly in light and dark")
-    func autoEQToggleLabel() {
-        expectColor(DesignTokens.Colors.autoEQToggleLabel,
-                    equals: NSColor.black.withAlphaComponent(0.65),
-                    in: Self.aqua)
-        expectColor(DesignTokens.Colors.autoEQToggleLabel,
-                    equals: NSColor.white.withAlphaComponent(0.5),
-                    in: Self.darkAqua)
-    }
-
-    // MARK: Shared tokens added in Task 5
-
     @Test("hoverSurface resolves correctly in light and dark")
     func hoverSurface() {
         // Light bumped from 0.08 → 0.115: clearly visible row hover wash

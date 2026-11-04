@@ -9,11 +9,11 @@ import AudioToolbox
 @Suite("Bluetooth connect priority")
 @MainActor
 struct BluetoothConnectPriorityTests {
-    private let speakers = AudioDevice(id: 75, uid: "BuiltInSpeakerDevice", name: "MacBook Air Speakers", icon: nil, supportsAutoEQ: false)
-    private let display = AudioDevice(id: 82, uid: "display-uid", name: "VG278", icon: nil, supportsAutoEQ: false)
-    private let headphones = AudioDevice(id: 90, uid: "41-42-FF-BC-37-BC:output", name: "Headphones", icon: nil, supportsAutoEQ: false)
-    private let usb = AudioDevice(id: 95, uid: "usb-dac", name: "USB DAC", icon: nil, supportsAutoEQ: false)
-    private let jack = AudioDevice(id: 77, uid: "BuiltInHeadphoneOutputDevice", name: "External Headphones", icon: nil, supportsAutoEQ: false)
+    private let speakers = AudioDevice(id: 75, uid: "BuiltInSpeakerDevice", name: "MacBook Air Speakers", icon: nil)
+    private let display = AudioDevice(id: 82, uid: "display-uid", name: "VG278", icon: nil)
+    private let headphones = AudioDevice(id: 90, uid: "41-42-FF-BC-37-BC:output", name: "Headphones", icon: nil)
+    private let usb = AudioDevice(id: 95, uid: "usb-dac", name: "USB DAC", icon: nil)
+    private let jack = AudioDevice(id: 77, uid: "BuiltInHeadphoneOutputDevice", name: "External Headphones", icon: nil)
 
     private func makeEngine(priority: [String]) -> (AudioEngine, MockAudioDeviceMonitor, SettingsManager) {
         let settings = SettingsManager(directory: FileManager.default.temporaryDirectory
@@ -28,7 +28,6 @@ struct BluetoothConnectPriorityTests {
         let engine = AudioEngine(
             permission: AudioRecordingPermission(),
             settingsManager: settings,
-            autoEQProfileManager: AutoEQProfileManager(),
             deviceProvider: monitor,
             deviceVolumeMonitor: volume,
             isAlive: { _ in true },

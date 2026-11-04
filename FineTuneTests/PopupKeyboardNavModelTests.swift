@@ -6,7 +6,7 @@ import AudioToolbox
 
 @MainActor
 private func makeDevice(uid: String, id: AudioDeviceID = 1) -> AudioDevice {
-    AudioDevice(id: id, uid: uid, name: "Device \(uid)", icon: nil, supportsAutoEQ: false)
+    AudioDevice(id: id, uid: uid, name: "Device \(uid)", icon: nil)
 }
 
 @Suite("PopupKeyboardNavModel") @MainActor

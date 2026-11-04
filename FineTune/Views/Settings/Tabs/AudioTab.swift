@@ -28,9 +28,6 @@ struct AudioTab: View {
                 audioEngine.handleInputLockEnabled()
             }
         }
-        .onChange(of: settings.appSettings.loudnessCompensationEnabled) { _, newValue in
-            audioEngine.setLoudnessCompensationEnabled(newValue)
-        }
         .onChange(of: settings.appSettings.loudnessEqualizationEnabled) { _, newValue in
             audioEngine.setLoudnessEqualizationEnabled(newValue)
         }
@@ -49,6 +46,16 @@ struct AudioTab: View {
                     range: 0.1...1.0,
                     width: 280
                 )
+            }
+            SettingsRowDivider()
+            SettingsRow(
+                "Level Volume",
+                description: "Even out loud and quiet moments, like ads that are louder than the video"
+            ) {
+                Toggle("", isOn: $settings.appSettings.loudnessEqualizationEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
             }
         }
     }

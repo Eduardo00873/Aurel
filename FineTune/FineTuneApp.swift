@@ -108,9 +108,8 @@ struct FineTuneApp: App {
         OrphanedTapCleanup.destroyOrphanedDevices()
 
         let settings = SettingsManager()
-        let profileManager = AutoEQProfileManager()
         let permission = AudioRecordingPermission()
-        let engine = AudioEngine(permission: permission, settingsManager: settings, autoEQProfileManager: profileManager)
+        let engine = AudioEngine(permission: permission, settingsManager: settings)
         _audioEngine = State(initialValue: engine)
 
         // Media keys / HUD services — instantiated at app scope so the tap

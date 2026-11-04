@@ -27,9 +27,6 @@ struct VolumeFeedbackGainTests {
     @Test func hardwareTierPlaysFullScale() {
         #expect(VolumeFeedback.gain(tier: .hardware, sliderFraction: 0.3) == 1.0)
     }
-    @Test func ddcTierPlaysFullScale() {
-        #expect(VolumeFeedback.gain(tier: .ddc, sliderFraction: 0.3) == 1.0)
-    }
     @Test func softwareTierMatchesTapMapping() {
         #expect(VolumeFeedback.gain(tier: .software, sliderFraction: 0.5)
             == VolumeMapping.systemGain(forSliderFraction: 0.5, tier: .software))

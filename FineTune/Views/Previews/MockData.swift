@@ -52,29 +52,25 @@ enum MockData {
             id: AudioDeviceID(100),
             uid: "BuiltInSpeakerDevice",
             name: "MacBook Pro Speakers",
-            icon: NSImage(systemSymbolName: "laptopcomputer", accessibilityDescription: nil),
-            supportsAutoEQ: false
+            icon: NSImage(systemSymbolName: "laptopcomputer", accessibilityDescription: nil)
         ),
         AudioDevice(
             id: AudioDeviceID(101),
             uid: "AirPodsProDevice",
             name: "AirPods Pro",
-            icon: NSImage(systemSymbolName: "airpodspro", accessibilityDescription: nil),
-            supportsAutoEQ: true
+            icon: NSImage(systemSymbolName: "airpodspro", accessibilityDescription: nil)
         ),
         AudioDevice(
             id: AudioDeviceID(102),
             uid: "HDMIDisplayDevice",
             name: "LG UltraFine Display",
-            icon: NSImage(systemSymbolName: "display", accessibilityDescription: nil),
-            supportsAutoEQ: false
+            icon: NSImage(systemSymbolName: "display", accessibilityDescription: nil)
         ),
         AudioDevice(
             id: AudioDeviceID(103),
             uid: "HomePodDevice",
             name: "Living Room HomePod",
-            icon: NSImage(systemSymbolName: "homepod", accessibilityDescription: nil),
-            supportsAutoEQ: false
+            icon: NSImage(systemSymbolName: "homepod", accessibilityDescription: nil)
         )
     ]
 

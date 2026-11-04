@@ -62,35 +62,9 @@ nonisolated extension AudioDeviceID {
     }
 }
 
-// MARK: - AutoEQ Eligibility
+// MARK: - Headphone Detection
 
 extension AudioDeviceID {
-    /// Returns `true` if this device is likely headphones and can benefit from AutoEQ correction.
-    /// HDMI, DisplayPort, AirPlay, virtual, and known speaker-only devices return `false`.
-    /// Built-in devices delegate to `builtInHasHeadphonesActive()` for headphone jack detection.
-    func supportsAutoEQ() -> Bool {
-        let transport = readTransportType()
-
-        switch transport {
-        case .hdmi, .displayPort, .airPlay, .virtual:
-            return false
-        case .builtIn:
-            return builtInHasHeadphonesActive()
-        default:
-            break
-        }
-
-        // Exclude known speaker-only devices by name
-        let name = (try? readDeviceName()) ?? ""
-        let excludedNames = ["HomePod", "Apple TV", "Studio Display", "Pro Display XDR"]
-        for excluded in excludedNames {
-            if name.localizedCaseInsensitiveContains(excluded) { return false }
-        }
-
-        // Bluetooth, USB, Thunderbolt, aggregate, unknown → likely headphones
-        return true
-    }
-
     /// Returns `true` for wired headphones on the built-in jack. Recent Macs expose them as
     /// their own `BuiltInHeadphoneOutputDevice`; older ones switch the built-in device's data source.
     func isWiredHeadphoneOutput(uid: String) -> Bool {

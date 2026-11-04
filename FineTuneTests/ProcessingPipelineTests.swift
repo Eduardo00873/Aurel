@@ -2,14 +2,13 @@
 // Unit tests for the audio processing pipeline extracted from ProcessTapController.
 //
 // Tests ProcessTapController.processMappedBuffers() — a static, RT-safe function
-// that encapsulates buffer mapping, volume ramp, channel routing, EQ chain, and
+// that encapsulates buffer mapping, volume ramp, channel routing, volume leveling, and
 // soft limiting. Already decoupled from instance state (all deps passed as params).
 //
 // Coverage targets:
 // 1. Buffer mapping: stereo, mono, surround, asymmetric, silence-bug regression
 // 2. Volume ramp: convergence, no overshoot, zero-target, unmute, rapid changes, single-frame
-// 3. Processing chain: EQ->limiter ordering, passthrough, zero-volume silence
-// 4. BiquadProcessor: NaN safety, nil setup passthrough, setup swap
+// 3. Processing chain: limiter, passthrough, zero-volume silence
 
 import AudioToolbox
 import Accelerate
@@ -103,10 +102,7 @@ private func processWithDefaults(
     preferredStereoLeft: Int = 0,
     preferredStereoRight: Int = 1,
     currentVol: inout Float,
-    eqProc: EQProcessor? = nil,
-    autoEQProc: AutoEQProcessor? = nil,
-    loudnessEqualizerProc: LoudnessEqualizer? = nil,
-    loudnessCompensatorProc: LoudnessCompensator? = nil
+    loudnessEqualizerProc: LoudnessEqualizer? = nil
 ) {
     ProcessTapController.processMappedBuffers(
         inputBuffers: input.bufferList,
@@ -118,10 +114,7 @@ private func processWithDefaults(
         preferredStereoLeft: preferredStereoLeft,
         preferredStereoRight: preferredStereoRight,
         currentVol: &currentVol,
-        eqProc: eqProc,
-        autoEQProc: autoEQProc,
-        loudnessEqualizerProc: loudnessEqualizerProc,
-        loudnessCompensatorProc: loudnessCompensatorProc
+        loudnessEqualizerProc: loudnessEqualizerProc
     )
 }
 
@@ -666,85 +659,6 @@ struct VolumeRampTests {
 @Suite("ProcessTapController — Processing Chain")
 struct ProcessingChainTests {
 
-    @Test("Flat EQ + unity volume = near-passthrough")
-    func flatEQPassthrough() {
-        let frames = 2048
-        let input = TestABL(buffers: [(channels: 2, frames: frames)])
-        let output = TestABL(buffers: [(channels: 2, frames: frames)])
-
-        // Fill with a recognizable pattern.
-        let inData = input.data(at: 0)
-        for i in 0..<(frames * 2) {
-            inData[i] = 0.3 * Float(sin(Double(i) * 0.1))
-        }
-
-        let eq = EQProcessor(sampleRate: 48000)
-        // EQProcessor init already applies EQSettings.flat.
-
-        var vol: Float = 1.0
-        processWithDefaults(
-            input: input, output: output,
-            currentVol: &vol, eqProc: eq
-        )
-
-        // Flat EQ should produce output ~ input within Float32 tolerance.
-        // 10 cascaded biquad sections at 0dB still introduce ~1e-4 error (L-043).
-        let outData = output.data(at: 0)
-        var maxError: Float = 0
-        for i in 0..<(frames * 2) {
-            let error = abs(outData[i] - inData[i])
-            maxError = max(maxError, error)
-        }
-        #expect(maxError < 1e-3,
-                "Flat EQ should be near-passthrough. Max error: \(maxError)")
-    }
-
-    @Test("EQ applied before SoftLimiter: boosted peaks are caught")
-    func eqBeforeLimiter() {
-        // Strategy: boost EQ so output exceeds 1.0 before limiting.
-        // If EQ runs after limiter, peaks would slip through.
-        // If EQ runs before limiter (correct), output <= 1.0.
-        let frames = 4096
-        let input = TestABL(buffers: [(channels: 2, frames: frames)])
-        let output = TestABL(buffers: [(channels: 2, frames: frames)])
-
-        // Input at 0.5 amplitude — will exceed 1.0 after EQ boost.
-        let inData = input.data(at: 0)
-        let freq = 1000.0  // 1kHz — center of EQ band 4
-        let sampleRate = 48000.0
-        let omega = 2.0 * Double.pi * freq / sampleRate
-        for f in 0..<frames {
-            let sample = Float(0.5 * sin(omega * Double(f)))
-            inData[f * 2] = sample
-            inData[f * 2 + 1] = sample
-        }
-
-        // Create EQ with +12dB boost at 1kHz (band 4).
-        let eq = EQProcessor(sampleRate: sampleRate)
-        var gains = [Float](repeating: 0, count: 10)
-        gains[4] = 12.0  // +12dB at 1kHz
-        let settings = EQSettings(bandGains: gains, isEnabled: true)
-        eq.updateSettings(settings)
-
-        var vol: Float = 1.0
-        processWithDefaults(
-            input: input, output: output,
-            currentVol: &vol, eqProc: eq
-        )
-
-        // After EQ boost + SoftLimiter: output should never exceed +/-1.0.
-        let outData = output.data(at: 0)
-        var maxAbs: Float = 0
-        for i in 0..<(frames * 2) {
-            maxAbs = max(maxAbs, abs(outData[i]))
-        }
-        #expect(maxAbs <= SoftLimiter.ceiling,
-                "SoftLimiter should catch EQ-boosted peaks. Max: \(maxAbs)")
-        // Also verify EQ actually boosted (output peak > input peak).
-        #expect(maxAbs > 0.5,
-                "EQ boost should increase output above input level. Max: \(maxAbs)")
-    }
-
     @Test("Zero volume produces all-zero output")
     func zeroVolumeProducesZeros() {
         let frames = 256
@@ -789,34 +703,6 @@ struct ProcessingChainTests {
         }
     }
 
-    @Test("EQ disabled: output equals volume-scaled input (no filter artifacts)")
-    func eqDisabledPassthrough() {
-        let frames = 512
-        let input = TestABL(buffers: [(channels: 2, frames: frames)])
-        let output = TestABL(buffers: [(channels: 2, frames: frames)])
-
-        let inData = input.data(at: 0)
-        for i in 0..<(frames * 2) { inData[i] = 0.4 }
-
-        let eq = EQProcessor(sampleRate: 48000)
-        let disabledSettings = EQSettings(bandGains: EQSettings.flat.bandGains, isEnabled: false)
-        eq.updateSettings(disabledSettings)
-
-        var vol: Float = 0.8
-        processWithDefaults(
-            input: input, output: output,
-            targetVol: 0.8,
-            currentVol: &vol, eqProc: eq
-        )
-
-        // Output should be 0.4 * 0.8 = 0.32 exactly (no filter processing).
-        let outData = output.data(at: 0)
-        for f in 0..<frames {
-            #expect(abs(outData[f * 2] - 0.32) < 1e-6,
-                    "EQ disabled should produce clean gain-only output at frame \(f)")
-        }
-    }
-
     @Test("Trailing output samples beyond frameCount are zeroed")
     func trailingSamplesZeroed() {
         // When outputSampleCount > frameCount * outputChannels, the remainder is zeroed.
@@ -845,242 +731,10 @@ struct ProcessingChainTests {
     }
 }
 
-// MARK: - BiquadProcessor Tests
-
-@Suite("BiquadProcessor — Safety and Bypass")
-struct BiquadProcessorSafetyTests {
-
-    @Test("nil setup = passthrough (output matches input)")
-    func nilSetupPassthrough() {
-        let processor = BiquadProcessor(
-            sampleRate: 48000, maxSections: 10,
-            category: "test", initiallyEnabled: true
-        )
-        // No setup loaded — _eqSetup is nil.
-
-        let frames = 256
-        let sampleCount = frames * 2
-        let input = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        let output = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        defer { input.deallocate(); output.deallocate() }
-
-        for i in 0..<sampleCount { input[i] = Float(i) * 0.001 }
-        memset(output, 0, sampleCount * MemoryLayout<Float>.size)
-
-        processor.process(input: input, output: output, frameCount: frames)
-
-        for i in 0..<sampleCount {
-            #expect(output[i] == input[i],
-                    "nil setup should copy input to output at sample \(i)")
-        }
-    }
-
-    @Test("Disabled processor = passthrough regardless of setup")
-    func disabledPassthrough() {
-        let processor = BiquadProcessor(
-            sampleRate: 48000, maxSections: 10,
-            category: "test", initiallyEnabled: false
-        )
-        // Load a real setup but keep disabled.
-        let gains = [Float](repeating: 6.0, count: 10)  // +6dB all bands
-        let coeffs = BiquadMath.coefficientsForAllBands(gains: gains, sampleRate: 48000)
-        let setup = coeffs.withUnsafeBufferPointer { ptr in
-            vDSP_biquad_CreateSetup(ptr.baseAddress!, vDSP_Length(10))
-        }
-        processor.swapSetup(setup)
-        // Keep disabled.
-
-        let frames = 256
-        let sampleCount = frames * 2
-        let input = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        let output = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        defer { input.deallocate(); output.deallocate() }
-
-        for i in 0..<sampleCount { input[i] = 0.3 }
-        memset(output, 0, sampleCount * MemoryLayout<Float>.size)
-
-        processor.process(input: input, output: output, frameCount: frames)
-
-        for i in 0..<sampleCount {
-            #expect(output[i] == input[i],
-                    "Disabled processor should copy input to output at sample \(i)")
-        }
-    }
-
-    @Test("NaN input triggers safety net: output zeroed, delay buffers reset")
-    func nanInputSafetyNet() {
-        // Create a processor with a real setup so it processes (not bypasses).
-        let processor = BiquadProcessor(
-            sampleRate: 48000, maxSections: 10,
-            category: "test", initiallyEnabled: true
-        )
-        let gains = [Float](repeating: 0.0, count: 10)  // Flat EQ
-        let coeffs = BiquadMath.coefficientsForAllBands(gains: gains, sampleRate: 48000)
-        let setup = coeffs.withUnsafeBufferPointer { ptr in
-            vDSP_biquad_CreateSetup(ptr.baseAddress!, vDSP_Length(10))
-        }
-        processor.swapSetup(setup)
-        processor.setEnabled(true)
-
-        let frames = 256
-        let sampleCount = frames * 2
-        let input = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        let output = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        defer { input.deallocate(); output.deallocate() }
-
-        // Fill input with NaN.
-        for i in 0..<sampleCount { input[i] = Float.nan }
-
-        processor.process(input: input, output: output, frameCount: frames)
-
-        // Safety net: output should be zeroed.
-        for i in 0..<sampleCount {
-            #expect(output[i] == 0.0,
-                    "NaN input should produce zeroed output at sample \(i)")
-        }
-
-        // Verify recovery: process normal audio after NaN.
-        for i in 0..<sampleCount { input[i] = 0.5 }
-        processor.process(input: input, output: output, frameCount: frames)
-
-        // Output should be non-NaN (delay buffers were reset).
-        for i in 0..<sampleCount {
-            #expect(!output[i].isNaN,
-                    "After NaN recovery, output should not be NaN at sample \(i)")
-        }
-    }
-
-    @Test("In-place processing: input == output pointer works correctly")
-    func inPlaceProcessing() {
-        let processor = BiquadProcessor(
-            sampleRate: 48000, maxSections: 10,
-            category: "test", initiallyEnabled: true
-        )
-        let gains = [Float](repeating: 0.0, count: 10)
-        let coeffs = BiquadMath.coefficientsForAllBands(gains: gains, sampleRate: 48000)
-        let setup = coeffs.withUnsafeBufferPointer { ptr in
-            vDSP_biquad_CreateSetup(ptr.baseAddress!, vDSP_Length(10))
-        }
-        processor.swapSetup(setup)
-        processor.setEnabled(true)
-
-        let frames = 512
-        let sampleCount = frames * 2
-        let buffer = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        defer { buffer.deallocate() }
-
-        for i in 0..<sampleCount { buffer[i] = 0.4 }
-
-        // Process in-place (input == output).
-        processor.process(input: buffer, output: buffer, frameCount: frames)
-
-        // Flat EQ in-place should produce ~ same signal.
-        for i in 0..<sampleCount {
-            #expect(!buffer[i].isNaN, "In-place result should not be NaN at \(i)")
-            #expect(abs(buffer[i] - 0.4) < 1e-3,
-                    "Flat EQ in-place should preserve signal at \(i). Got \(buffer[i])")
-        }
-    }
-
-    @Test("Setup swap to nil: transitions cleanly to bypass")
-    func setupSwapToNil() {
-        let processor = BiquadProcessor(
-            sampleRate: 48000, maxSections: 10,
-            category: "test", initiallyEnabled: true
-        )
-        let gains = [Float](repeating: 3.0, count: 10)
-        let coeffs = BiquadMath.coefficientsForAllBands(gains: gains, sampleRate: 48000)
-        let setup = coeffs.withUnsafeBufferPointer { ptr in
-            vDSP_biquad_CreateSetup(ptr.baseAddress!, vDSP_Length(10))
-        }
-        processor.swapSetup(setup)
-        processor.setEnabled(true)
-
-        // Now swap to nil.
-        processor.swapSetup(nil)
-
-        let frames = 256
-        let sampleCount = frames * 2
-        let input = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        let output = UnsafeMutablePointer<Float>.allocate(capacity: sampleCount)
-        defer { input.deallocate(); output.deallocate() }
-
-        for i in 0..<sampleCount { input[i] = 0.6 }
-
-        processor.process(input: input, output: output, frameCount: frames)
-
-        // With nil setup, should bypass (copy input to output).
-        for i in 0..<sampleCount {
-            #expect(output[i] == input[i],
-                    "After swap to nil, should bypass at sample \(i)")
-        }
-    }
-}
-
 // MARK: - Loudness Subsystem Integration
 
 @Suite("ProcessTapController — Loudness Integration")
 struct LoudnessIntegrationTests {
-
-    @Test("Loudness compensator modifies output vs nil-processor baseline at low volume")
-    func loudnessCompensatorModifiesOutput() {
-        let frames = 4096
-        let sampleRate = 48000.0
-
-        // Create a stereo sine wave input at 60 Hz — loudness compensation boosts bass
-        // at low volumes, so this frequency should show measurable gain change.
-        let inputABL = TestABL(buffers: [(channels: 2, frames: frames)])
-        let inData = inputABL.data(at: 0)
-        for f in 0..<frames {
-            let phase = Float(2.0 * Double.pi * 60.0 * Double(f) / sampleRate)
-            let sample = 0.3 * sin(phase)
-            inData[f * 2] = sample
-            inData[f * 2 + 1] = sample
-        }
-
-        // Baseline: no loudness processor
-        let baselineOutput = TestABL(buffers: [(channels: 2, frames: frames)])
-        var baseVol: Float = 1.0
-        processWithDefaults(
-            input: inputABL,
-            output: baselineOutput,
-            currentVol: &baseVol
-        )
-
-        // With loudness compensator at 25% volume (will produce non-flat EQ)
-        let compensator = LoudnessCompensator(sampleRate: sampleRate)
-        compensator.updateForVolume(0.25)
-        #expect(compensator.isEnabled,
-                "Compensator should enable at non-reference volume")
-
-        let compOutput = TestABL(buffers: [(channels: 2, frames: frames)])
-        var compVol: Float = 1.0
-        processWithDefaults(
-            input: inputABL,
-            output: compOutput,
-            currentVol: &compVol,
-            loudnessCompensatorProc: compensator
-        )
-
-        // Measure RMS of the second half (skip transient settling)
-        let startSample = (frames / 2) * 2
-        let endSample = frames * 2
-        var baselineSquaredSum: Double = 0
-        var compSquaredSum: Double = 0
-        for i in stride(from: startSample, to: endSample, by: 2) {
-            baselineSquaredSum += Double(baselineOutput.data(at: 0)[i] * baselineOutput.data(at: 0)[i])
-            compSquaredSum += Double(compOutput.data(at: 0)[i] * compOutput.data(at: 0)[i])
-        }
-        let baselineRMS = sqrt(baselineSquaredSum / Double((endSample - startSample) / 2))
-        let compRMS = sqrt(compSquaredSum / Double((endSample - startSample) / 2))
-
-        // Compensator at low volume boosts bass — output RMS should differ from baseline
-        #expect(abs(compRMS - baselineRMS) > 0.001,
-                "Compensated RMS (\(compRMS)) should differ measurably from baseline (\(baselineRMS))")
-        // At low volume, 60 Hz bass should be boosted (ISO 226 shows increased bass sensitivity loss at low phon)
-        #expect(compRMS > baselineRMS,
-                "60 Hz bass should be boosted at low volume: compensated RMS=\\(compRMS) vs baseline=\\(baselineRMS)")
-    }
 
     @Test("Loudness equalizer modifies output vs nil-processor baseline when enabled")
     func loudnessEqualizerModifiesOutput() {
@@ -1132,58 +786,4 @@ struct LoudnessIntegrationTests {
                 "Enabled loudness equalizer should modify at least some samples vs baseline")
     }
 
-    @Test("Loudness chain ordering: compensator shapes frequency, equalizer adjusts level")
-    func loudnessChainOrdering() {
-        let frames = 48000  // 1 s: the momentary leveler (400 ms window, 100 ms hop) needs > one hop to produce a gain change
-        let sampleRate = 48000.0
-
-        // Create a low-frequency stereo signal that compensator will boost
-        let inputABL = TestABL(buffers: [(channels: 2, frames: frames)])
-        let inData = inputABL.data(at: 0)
-        for f in 0..<frames {
-            let phase = Float(2.0 * Double.pi * 60.0 * Double(f) / sampleRate)
-            let sample: Float = 0.3 * sin(phase)
-            inData[f * 2] = sample
-            inData[f * 2 + 1] = sample
-        }
-
-        // Compensator only
-        let compensator = LoudnessCompensator(sampleRate: sampleRate)
-        compensator.updateForVolume(0.25)
-        let compOnlyOutput = TestABL(buffers: [(channels: 2, frames: frames)])
-        var compVol: Float = 1.0
-        processWithDefaults(
-            input: inputABL,
-            output: compOnlyOutput,
-            currentVol: &compVol,
-            loudnessCompensatorProc: compensator
-        )
-
-        // Both: equalizer + compensator
-        var eqSettings = LoudnessEqualizerSettings()
-        eqSettings.enabled = true
-        let equalizer = LoudnessEqualizer(settings: eqSettings, sampleRate: Float(sampleRate))
-        let compensator2 = LoudnessCompensator(sampleRate: sampleRate)
-        compensator2.updateForVolume(0.25)
-        let bothOutput = TestABL(buffers: [(channels: 2, frames: frames)])
-        var bothVol: Float = 1.0
-        processWithDefaults(
-            input: inputABL,
-            output: bothOutput,
-            currentVol: &bothVol,
-            loudnessEqualizerProc: equalizer,
-            loudnessCompensatorProc: compensator2
-        )
-
-        // When both are active, output should differ from compensator-only
-        // (equalizer adjusts the level after compensator shapes frequency)
-        var diffCount = 0
-        for i in 0..<(frames * 2) {
-            if abs(bothOutput.data(at: 0)[i] - compOnlyOutput.data(at: 0)[i]) > 1e-6 {
-                diffCount += 1
-            }
-        }
-        #expect(diffCount > 0,
-                "Adding loudness equalizer should change output beyond compensator alone")
-    }
 }

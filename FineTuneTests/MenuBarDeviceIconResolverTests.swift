@@ -7,7 +7,7 @@ import AudioToolbox
 @Suite("MenuBarDeviceIconResolver")
 struct MenuBarDeviceIconResolverTests {
     private func device(id: AudioDeviceID, uid: String, name: String) -> AudioDevice {
-        AudioDevice(id: id, uid: uid, name: name, icon: nil, supportsAutoEQ: true)
+        AudioDevice(id: id, uid: uid, name: name, icon: nil)
     }
 
     private func resolve(

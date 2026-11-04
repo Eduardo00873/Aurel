@@ -15,7 +15,6 @@ struct AudioEngineBluetoothMonitorTests {
         let engine = AudioEngine(
             permission: AudioRecordingPermission(),
             settingsManager: SettingsManager(directory: tempDir),
-            autoEQProfileManager: AutoEQProfileManager(),
             deviceProvider: deviceMonitor,
             deviceVolumeMonitor: MockDeviceVolumeProviding(deviceMonitor: deviceMonitor),
             startMonitorsAutomatically: false

@@ -32,9 +32,6 @@ struct SettingsJSONTests {
         original.appDeviceRouting = ["com.test.app": "device-uid-123"]
         original.pinnedApps = Set(["com.test.app"])
         original.outputDevicePriority = ["uid-a", "uid-b", "uid-c"]
-        original.ddcVolumes = ["monitor-1": 75]
-        original.ddcMuteStates = ["monitor-1": false]
-        original.autoEQPreampEnabled = false
         original.hiddenOutputDeviceUIDs = ["uid-hidden-out-1", "uid-hidden-out-2"]
         original.hiddenInputDeviceUIDs = ["uid-hidden-in-1"]
         original.deviceIconOverrides = ["uid-a": "airpodsmax", "uid-b": "gamecontroller.fill"]
@@ -48,9 +45,6 @@ struct SettingsJSONTests {
         #expect(decoded.appDeviceRouting == original.appDeviceRouting)
         #expect(decoded.pinnedApps == original.pinnedApps)
         #expect(decoded.outputDevicePriority == original.outputDevicePriority)
-        #expect(decoded.ddcVolumes == original.ddcVolumes)
-        #expect(decoded.ddcMuteStates == original.ddcMuteStates)
-        #expect(decoded.autoEQPreampEnabled == false)
         #expect(decoded.hiddenOutputDeviceUIDs == original.hiddenOutputDeviceUIDs)
         #expect(decoded.hiddenInputDeviceUIDs == original.hiddenInputDeviceUIDs)
         #expect(decoded.deviceIconOverrides == original.deviceIconOverrides)
@@ -65,7 +59,6 @@ struct SettingsJSONTests {
         #expect(decoded.appVolumes.isEmpty)
         #expect(decoded.appMutes.isEmpty)
         #expect(decoded.systemSoundsFollowsDefault == true)
-        #expect(decoded.autoEQPreampEnabled == true)
         #expect(decoded.hiddenOutputDeviceUIDs.isEmpty)
         #expect(decoded.hiddenInputDeviceUIDs.isEmpty)
         #expect(decoded.deviceIconOverrides.isEmpty)
@@ -249,19 +242,6 @@ struct AppSettingsDefaultTests {
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
         #expect(decoded.loudnessEqualizationEnabled == true)
-    }
-
-    @Test("Unified loudness toggle updates compensation and equalization together")
-    func unifiedLoudnessToggleSetsBothFlags() {
-        var settings = AppSettings()
-
-        settings.setUnifiedLoudnessEnabled(true)
-        #expect(settings.loudnessCompensationEnabled == true)
-        #expect(settings.loudnessEqualizationEnabled == true)
-
-        settings.setUnifiedLoudnessEnabled(false)
-        #expect(settings.loudnessCompensationEnabled == false)
-        #expect(settings.loudnessEqualizationEnabled == false)
     }
 
     @Test("loudnessEqualizationEnabled persists via SettingsManager")

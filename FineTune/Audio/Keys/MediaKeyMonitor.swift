@@ -42,8 +42,6 @@ final class MediaKeyMonitor {
     private var disableWatchdogTask: Task<Void, Never>?
     private(set) var watchdogOpen: Bool = false
 
-    /// 80 ms floor between DDC-tier repeats — DDC write queues saturate at key-repeat rate.
-    var lastDDCRepeatTime: DispatchTime?
 
     private var ghostTapProbeTask: Task<Void, Never>?
 
@@ -250,7 +248,6 @@ final class MediaKeyMonitor {
         )
     }
 
-    /// `.ddc` tier coalesces repeats to an 80 ms floor; hardware/software pass them through.
     /// Mute repeats are dropped upstream. Stepping operates on slider-position; HUD receives
     /// the slider fraction so it always matches the popup device row.
     func handleCore(
@@ -269,11 +266,7 @@ final class MediaKeyMonitor {
         let currentSlider = VolumeMapping.sliderFraction(forSystemGain: currentVolume, tier: tier)
 
         switch event {
-        case .volumeUp(let isRepeat):
-            if isRepeat && tier == .ddc && isDDCRepeatCoalesced() {
-                logger.debug("DDC repeat coalesced")
-                return
-            }
+        case .volumeUp:
             let nextSlider = min(1.0, currentSlider + sliderDelta)
             let newVolume = VolumeMapping.systemGain(forSliderFraction: nextSlider, tier: tier)
             // Volume-up from muted unmutes (system HUD parity).
@@ -287,11 +280,7 @@ final class MediaKeyMonitor {
             }
             iconCoordinator?.flashDevice()
 
-        case .volumeDown(let isRepeat):
-            if isRepeat && tier == .ddc && isDDCRepeatCoalesced() {
-                logger.debug("DDC repeat coalesced")
-                return
-            }
+        case .volumeDown:
             let nextSlider = max(0, currentSlider - sliderDelta)
             let newVolume = VolumeMapping.systemGain(forSliderFraction: nextSlider, tier: tier)
             let willBeSilent = nextSlider <= 0.001
@@ -316,17 +305,6 @@ final class MediaKeyMonitor {
             }
             iconCoordinator?.flashDevice()
         }
-    }
-
-    /// `true` if this repeat falls inside the 80 ms floor and should be dropped.
-    private func isDDCRepeatCoalesced() -> Bool {
-        let now = DispatchTime.now()
-        if let last = lastDDCRepeatTime {
-            let deltaNs = now.uptimeNanoseconds &- last.uptimeNanoseconds
-            if deltaNs < 80 * 1_000_000 { return true }
-        }
-        lastDDCRepeatTime = now
-        return false
     }
 
     // MARK: - Tap-disabled watchdog

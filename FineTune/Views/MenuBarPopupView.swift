@@ -300,21 +300,22 @@ struct MenuBarPopupView: View {
                 volume: audioEngine.getVolume(for: app),
                 isMuted: audioEngine.getMute(for: app),
                 isFocused: isAppFocused(id),
+                boost: audioEngine.getBoost(for: app),
+                onBoostChange: { audioEngine.setBoost(for: app, to: $0) },
                 onVolumeChange: { audioEngine.setVolume(for: app, to: $0) },
                 onMuteChange: { audioEngine.setMute(for: app, to: $0) },
                 onIconTap: { activateApp(pid: app.id, bundleID: app.bundleID) }
             ) {
                 appOutput(
-                    mode: audioEngine.getDeviceSelectionMode(for: app),
                     selectedDeviceUID: deviceUID,
-                    selectedDeviceUIDs: audioEngine.getSelectedDeviceUIDs(for: app),
                     isFollowingDefault: audioEngine.isFollowingDefault(for: app),
                     onSelectFollowDefault: { audioEngine.setDevice(for: app, deviceUID: nil) },
-                    onDeviceSelected: { audioEngine.setDevice(for: app, deviceUID: $0) },
-                    onDevicesSelected: { audioEngine.setSelectedDeviceUIDs(for: app, to: $0) }
+                    onDeviceSelected: { audioEngine.setDevice(for: app, deviceUID: $0) }
                 )
             }
             .contextMenu {
+                boostMenu(selection: audioEngine.getBoost(for: app)) { audioEngine.setBoost(for: app, to: $0) }
+                Divider()
                 Button(audioEngine.isPinned(app) ? "Unpin" : "Keep in List") {
                     if audioEngine.isPinned(app) {
                         audioEngine.unpinApp(app.persistenceIdentifier)
@@ -330,6 +331,14 @@ struct MenuBarPopupView: View {
         }
     }
 
+    /// "Amplify" submenu: raises a quiet app above 100%. The soft limiter keeps peaks from clipping.
+    private func boostMenu(selection: BoostLevel, onSelect: @escaping (BoostLevel) -> Void) -> some View {
+        Picker("Amplify", selection: Binding(get: { selection }, set: onSelect)) {
+            ForEach(BoostLevel.allCases, id: \.self) { Text($0.menuTitle).tag($0) }
+        }
+        .pickerStyle(.menu)
+    }
+
     /// Row for a pinned inactive app (not currently producing audio)
     private func inactiveAppRow(info: PinnedAppInfo, displayableApp: DisplayableApp) -> some View {
         let identifier = info.persistenceIdentifier
@@ -340,20 +349,23 @@ struct MenuBarPopupView: View {
             isMuted: audioEngine.getMuteForInactive(identifier: identifier),
             isInactive: true,
             isFocused: isAppFocused(displayableApp.id),
+            boost: audioEngine.getBoostForInactive(identifier: identifier),
+            onBoostChange: { audioEngine.setBoostForInactive(identifier: identifier, to: $0) },
             onVolumeChange: { audioEngine.setVolumeForInactive(identifier: identifier, to: $0) },
             onMuteChange: { audioEngine.setMuteForInactive(identifier: identifier, to: $0) }
         ) {
             appOutput(
-                mode: audioEngine.getDeviceSelectionModeForInactive(identifier: identifier),
                 selectedDeviceUID: audioEngine.getDeviceRoutingForInactive(identifier: identifier),
-                selectedDeviceUIDs: audioEngine.getSelectedDeviceUIDsForInactive(identifier: identifier),
                 isFollowingDefault: audioEngine.isFollowingDefaultForInactive(identifier: identifier),
                 onSelectFollowDefault: { audioEngine.setDeviceRoutingForInactive(identifier: identifier, deviceUID: nil) },
-                onDeviceSelected: { audioEngine.setDeviceRoutingForInactive(identifier: identifier, deviceUID: $0) },
-                onDevicesSelected: { audioEngine.setSelectedDeviceUIDsForInactive(identifier: identifier, to: $0) }
+                onDeviceSelected: { audioEngine.setDeviceRoutingForInactive(identifier: identifier, deviceUID: $0) }
             )
         }
         .contextMenu {
+            boostMenu(selection: audioEngine.getBoostForInactive(identifier: identifier)) {
+                audioEngine.setBoostForInactive(identifier: identifier, to: $0)
+            }
+            Divider()
             Button("Unpin") {
                 audioEngine.unpinApp(identifier)
             }
@@ -369,46 +381,21 @@ struct MenuBarPopupView: View {
         .id(PopupKeyboardNavModel.RowID.app(persistenceID: displayableApp.id))
     }
 
-    /// Output selector for one app. Apps already saved in multi-output mode keep a
-    /// picker that can edit their device set; the mode itself is no longer offered.
-    @ViewBuilder
+    /// Output selector for one app: follow the system output or play only on one device.
     private func appOutput(
-        mode: DeviceSelectionMode,
         selectedDeviceUID: String?,
-        selectedDeviceUIDs: Set<String>,
         isFollowingDefault: Bool,
         onSelectFollowDefault: @escaping () -> Void,
-        onDeviceSelected: @escaping (String) -> Void,
-        onDevicesSelected: @escaping (Set<String>) -> Void
+        onDeviceSelected: @escaping (String) -> Void
     ) -> some View {
-        switch mode {
-        case .single:
-            AppOutputMenu(
-                devices: sortedDevices,
-                selectedDeviceUID: selectedDeviceUID,
-                isFollowingDefault: isFollowingDefault,
-                systemOutputName: sortedDevices.first(where: { $0.id == deviceVolumeMonitor.defaultDeviceID })?.name,
-                onSelectFollowDefault: onSelectFollowDefault,
-                onDeviceSelected: onDeviceSelected
-            )
-        case .multi:
-            DevicePicker(
-                devices: sortedDevices,
-                deviceIconOverrides: audioEngine.settingsManager.deviceIconOverrides,
-                selectedDeviceUID: selectedDeviceUID ?? deviceVolumeMonitor.defaultDeviceUID ?? "",
-                selectedDeviceUIDs: selectedDeviceUIDs,
-                isFollowingDefault: isFollowingDefault,
-                defaultDeviceUID: deviceVolumeMonitor.defaultDeviceUID,
-                mode: .multi,
-                onModeChange: { _ in },
-                onDeviceSelected: onDeviceSelected,
-                onDevicesSelected: onDevicesSelected,
-                onSelectFollowDefault: onSelectFollowDefault,
-                showModeToggle: false,
-                triggerWidth: 0,
-                triggerStyle: .iconOnly
-            )
-        }
+        AppOutputMenu(
+            devices: sortedDevices,
+            selectedDeviceUID: selectedDeviceUID,
+            isFollowingDefault: isFollowingDefault,
+            systemOutputName: sortedDevices.first(where: { $0.id == deviceVolumeMonitor.defaultDeviceID })?.name,
+            onSelectFollowDefault: onSelectFollowDefault,
+            onDeviceSelected: onDeviceSelected
+        )
     }
 
     // MARK: - Hidden Apps

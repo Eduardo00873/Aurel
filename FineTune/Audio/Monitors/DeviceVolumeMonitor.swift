@@ -70,7 +70,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "FineTune", category: "DeviceVolumeMonitor")
 
     #if !APP_STORE
-    private let ddcController: DDCController?
     #endif
 
     /// Volume listeners for each tracked output device
@@ -144,10 +143,9 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
     )
 
     #if !APP_STORE
-    init(deviceMonitor: AudioDeviceMonitor, settingsManager: SettingsManager, ddcController: DDCController? = nil) {
+    init(deviceMonitor: AudioDeviceMonitor, settingsManager: SettingsManager) {
         self.deviceMonitor = deviceMonitor
         self.settingsManager = settingsManager
-        self.ddcController = ddcController
     }
     #else
     init(deviceMonitor: AudioDeviceMonitor, settingsManager: SettingsManager) {
@@ -176,12 +174,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
         if deviceID.hasOutputVolumeControl() {
             return .hardware
         }
-
-        #if !APP_STORE
-        if let ddcController, ddcController.isDDCBacked(deviceID) {
-            return .ddc
-        }
-        #endif
 
         return .software
     }
@@ -342,7 +334,7 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
         defaultInputDeviceUID = nil
     }
 
-    /// Sub-1% floor for hardware/DDC scalar readbacks → true silence (scalar 0.01 ≈ -99 dB,
+    /// Sub-1% floor for hardware scalar readbacks → true silence (scalar 0.01 ≈ -99 dB,
     /// empirically measured on built-in output). Software writes use `storedVolume` instead.
     private func clampedVolume(_ volume: Float) -> Float {
         volume < 0.01 ? 0 : volume
@@ -350,12 +342,12 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
 
     /// Software gain rides the x² curve (`VolumeMapping`), so sub-1% is the bottom ~10%
     /// of slider travel; flooring it would trap that range, since the step path re-derives
-    /// the slider from the stored gain. Hardware/DDC scalars are ~linear — safe to floor.
+    /// the slider from the stored gain. Hardware scalars are ~linear — safe to floor.
     nonisolated static func storedVolume(_ volume: Float, tier: VolumeControlTier) -> Float {
         switch tier {
         case .software:
             return volume
-        case .hardware, .ddc:
+        case .hardware:
             return volume < 0.01 ? 0 : volume
         }
     }
@@ -377,19 +369,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
             } else {
                 logger.warning("Failed to set volume on device \(deviceID)")
             }
-
-        case .ddc:
-            #if !APP_STORE
-            if let ddcController {
-                let ddcVolume = Int(round(clamped * 100))
-                ddcController.setVolume(for: deviceID, to: ddcVolume)
-                volumes[deviceID] = clamped
-            } else {
-                logger.warning("Failed to set DDC volume on device \(deviceID)")
-            }
-            #else
-            logger.warning("DDC volume not available on device \(deviceID)")
-            #endif
 
         case .software:
             guard let deviceUID = outputDeviceUID(for: deviceID) else {
@@ -436,22 +415,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
                 logger.warning("Failed to set mute on device \(deviceID)")
             }
 
-        case .ddc:
-            #if !APP_STORE
-            if let ddcController {
-                if muted {
-                    ddcController.mute(for: deviceID)
-                } else {
-                    ddcController.unmute(for: deviceID)
-                }
-                muteStates[deviceID] = muted
-            } else {
-                logger.warning("Failed to set DDC mute on device \(deviceID)")
-            }
-            #else
-            logger.warning("DDC mute not available on device \(deviceID)")
-            #endif
-
         case .software:
             guard let deviceUID = outputDeviceUID(for: deviceID) else {
                 logger.warning("Cannot persist software mute: missing device UID for \(deviceID)")
@@ -485,13 +448,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
             }
         }
     }
-
-    #if !APP_STORE
-    /// Re-reads volume/mute states after DDC probe discovers (or loses) displays.
-    func refreshAfterDDCProbe() {
-        refreshOutputDeviceStates()
-    }
-    #endif
 
     // MARK: - Input Device Control
 
@@ -872,12 +828,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
 
         if outputVolumeBackend(for: deviceID) == .software { return }
 
-        #if !APP_STORE
-        // DDC-backed devices don't have real CoreAudio volume changes;
-        // ignore HAL callbacks (they always report 1.0)
-        if let ddcController, ddcController.isDDCBacked(deviceID) { return }
-        #endif
-
         let newVolume = clampedVolume(deviceID.readOutputVolumeScalar())
 
         // Deduplicate: HAL often fires L/R channel notifications for the same volume value.
@@ -970,19 +920,6 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
             return
         }
 
-        #if !APP_STORE
-        // For DDC-backed devices, use cached DDC volume instead of CoreAudio
-        if backend == .ddc, let ddcController {
-            if let ddcVolume = ddcController.getVolume(for: deviceID) {
-                volumes[deviceID] = Float(ddcVolume) / 100.0
-            } else {
-                volumes[deviceID] = 0.5
-            }
-            muteStates[deviceID] = ddcController.isMuted(for: deviceID)
-            return
-        }
-        #endif
-
         let volume = clampedVolume(deviceID.readOutputVolumeScalar())
         volumes[deviceID] = volume
 
@@ -1013,21 +950,14 @@ final class DeviceVolumeMonitor: DeviceVolumeProviding {
             if previousMute {
                 _ = deviceID.setMuteState(false)
             }
-        case .hardware, .ddc:
-            // Revert to hardware/DDC: if the software path was muted, re-apply
-            // that mute at the hardware/DDC layer so the user's mute intent
+        case .hardware:
+            // Revert to hardware: if the software path was muted, re-apply
+            // that mute at the hardware layer so the user's mute intent
             // doesn't silently get dropped when the software attenuator is no
             // longer the authority.
             let softwareMute = settingsManager.getSoftwareDeviceMuteState(for: device.uid)
             if softwareMute {
-                if newBackend == .hardware {
-                    _ = deviceID.setMuteState(true)
-                }
-                #if !APP_STORE
-                if newBackend == .ddc, let ddcController {
-                    ddcController.mute(for: deviceID)
-                }
-                #endif
+                _ = deviceID.setMuteState(true)
             }
         }
         readOneState(for: deviceID, device: device)

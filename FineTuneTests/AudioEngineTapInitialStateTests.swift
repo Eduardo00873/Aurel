@@ -17,10 +17,6 @@ import AudioToolbox
 final class RecordingProcessTapController: ProcessTapControlling {
     enum Event: Equatable {
         case activate(TapInitialStateSnapshot)
-        case updateEQSettings(EQSettings)
-        case updateAutoEQProfile(profileID: String?)
-        case setAutoEQPreampEnabled(Bool)
-        case updateLoudnessCompensation(volume: Float, enabled: Bool)
         case updateLoudnessEqualization(LoudnessEqualizerSettings)
         case invalidate
     }
@@ -28,20 +24,10 @@ final class RecordingProcessTapController: ProcessTapControlling {
     /// Plain snapshot of `TapInitialState` so test asserts don't depend on
     /// the source-type's identity (defensive against future mutations).
     struct TapInitialStateSnapshot: Equatable {
-        var eqSettings: EQSettings
-        var autoEQProfileID: String?
-        var autoEQPreampEnabled: Bool
-        var loudnessVolume: Float
-        var loudnessCompensationEnabled: Bool
         var loudnessEqualizerSettings: LoudnessEqualizerSettings
 
         @MainActor
         init(_ s: TapInitialState) {
-            self.eqSettings = s.eqSettings
-            self.autoEQProfileID = s.autoEQProfile?.id
-            self.autoEQPreampEnabled = s.autoEQPreampEnabled
-            self.loudnessVolume = s.loudnessVolume
-            self.loudnessCompensationEnabled = s.loudnessCompensationEnabled
             self.loudnessEqualizerSettings = s.loudnessEqualizerSettings
         }
     }
@@ -70,22 +56,6 @@ final class RecordingProcessTapController: ProcessTapControlling {
 
     func invalidate() {
         events.append(.invalidate)
-    }
-
-    func updateEQSettings(_ settings: EQSettings) {
-        events.append(.updateEQSettings(settings))
-    }
-
-    func updateAutoEQProfile(_ profile: AutoEQProfile?) {
-        events.append(.updateAutoEQProfile(profileID: profile?.id))
-    }
-
-    func setAutoEQPreampEnabled(_ enabled: Bool) {
-        events.append(.setAutoEQPreampEnabled(enabled))
-    }
-
-    func updateLoudnessCompensation(volume: Float, enabled: Bool) {
-        events.append(.updateLoudnessCompensation(volume: volume, enabled: enabled))
     }
 
     func updateLoudnessEqualization(_ settings: LoudnessEqualizerSettings) {
@@ -131,7 +101,6 @@ private struct Fixture {
 
 @MainActor
 private func makeFixture(
-    supportsAutoEQ: Bool = true,
     deviceVolume: Float = 0.75
 ) -> Fixture {
     let tempDir = FileManager.default.temporaryDirectory
@@ -143,8 +112,7 @@ private func makeFixture(
         id: AudioDeviceID(99),
         uid: "uid-test",
         name: "Test Output",
-        icon: nil,
-        supportsAutoEQ: supportsAutoEQ
+        icon: nil
     )
     deviceMonitor.addOutputDevice(device)
 
@@ -175,7 +143,6 @@ private func makeFixture(
     let engine = AudioEngine(
         permission: permission,
         settingsManager: settings,
-        autoEQProfileManager: AutoEQProfileManager(),
         deviceProvider: deviceMonitor,
         processMonitor: processMonitor,
         deviceVolumeMonitor: mockVolume,
@@ -211,44 +178,6 @@ struct AudioEngineTapInitialStateTests {
 
     // MARK: Single-knob derivation
 
-    @Test("EQ settings persisted for this app land in TapInitialState.eqSettings")
-    func eqSettingsAreCarried() throws {
-        let fix = makeFixture()
-        let custom = EQSettings(bandGains: [3, 0, -2, 0, 0, 0, 0, 0, 0, 4], isEnabled: true)
-        fix.settings.setEQSettings(custom, for: fix.app.persistenceIdentifier)
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.eqSettings == custom)
-    }
-
-    @Test("autoEQPreampEnabled mirrors settingsManager.autoEQPreampEnabled",
-          arguments: [true, false])
-    func autoEQPreampEnabledMirrored(value: Bool) throws {
-        let fix = makeFixture()
-        fix.settings.autoEQPreampEnabled = value
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.autoEQPreampEnabled == value)
-    }
-
-    @Test("loudnessCompensationEnabled mirrors appSettings.loudnessCompensationEnabled",
-          arguments: [true, false])
-    func loudnessCompensationFlagMirrored(value: Bool) throws {
-        let fix = makeFixture()
-        var s = fix.settings.appSettings
-        s.loudnessCompensationEnabled = value
-        fix.settings.updateAppSettings(s)
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.loudnessCompensationEnabled == value)
-    }
-
     @Test("loudnessEqualizerSettings.enabled mirrors appSettings.loudnessEqualizationEnabled",
           arguments: [true, false])
     func loudnessEqualizerFlagMirrored(value: Bool) throws {
@@ -261,79 +190,6 @@ struct AudioEngineTapInitialStateTests {
 
         let snap = try #require(capturedInitial(fix))
         #expect(snap.loudnessEqualizerSettings.enabled == value)
-    }
-
-    @Test("loudnessVolume = currentDeviceVolume × per-app volume")
-    func loudnessVolumeIsProduct() throws {
-        let fix = makeFixture(deviceVolume: 0.5)
-        fix.engine.volumeState.setVolume(for: fix.app.id, to: 0.4, identifier: fix.app.persistenceIdentifier)
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        // applyTapOutputState() runs before tapInitialState() is built, so
-        // currentDeviceVolume is 0.5 (from MockDeviceVolumeProviding.volumes).
-        // loudnessVolume should be deviceVolume (0.5) × appVolume (0.4) = 0.2.
-        #expect(abs(snap.loudnessVolume - 0.2) < 1e-6)
-    }
-
-    // MARK: AutoEQ profile resolution
-
-    @Test("autoEQProfile is nil when the device does not support AutoEQ")
-    func autoEQNilForUnsupportedDevice() throws {
-        let fix = makeFixture(supportsAutoEQ: false)
-        // Even if a selection exists, an unsupported device must skip AutoEQ.
-        fix.settings.setAutoEQSelection(
-            for: fix.device.uid,
-            to: AutoEQSelection(profileID: "any-id", isEnabled: true)
-        )
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.autoEQProfileID == nil)
-    }
-
-    @Test("autoEQProfile is nil when no selection is persisted for the device")
-    func autoEQNilWithNoSelection() throws {
-        let fix = makeFixture(supportsAutoEQ: true)
-        // Don't set any selection.
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.autoEQProfileID == nil)
-    }
-
-    @Test("autoEQProfile is nil when the selection is disabled")
-    func autoEQNilWhenSelectionDisabled() throws {
-        let fix = makeFixture(supportsAutoEQ: true)
-        fix.settings.setAutoEQSelection(
-            for: fix.device.uid,
-            to: AutoEQSelection(profileID: "any-id", isEnabled: false)
-        )
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.autoEQProfileID == nil)
-    }
-
-    @Test("autoEQProfile is nil when selection is enabled but profile is not in the cache")
-    func autoEQNilWhenProfileNotCached() throws {
-        // Default AutoEQProfileManager has no profiles cached for "missing-id".
-        // The pre-activate synchronous lookup must return nil so that
-        // ensureTapExists falls through to the async resolve branch.
-        let fix = makeFixture(supportsAutoEQ: true)
-        fix.settings.setAutoEQSelection(
-            for: fix.device.uid,
-            to: AutoEQSelection(profileID: "missing-id", isEnabled: true)
-        )
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let snap = try #require(capturedInitial(fix))
-        #expect(snap.autoEQProfileID == nil)
     }
 
     // MARK: Ordering / post-activation behaviour
@@ -352,28 +208,15 @@ struct AudioEngineTapInitialStateTests {
         }
     }
 
-    @Test("No EQ/AutoEQ/Loudness mutation runs BEFORE activate(initial:) — the apply-initial-state contract")
+    @Test("No volume-leveling mutation runs BEFORE activate(initial:) — the apply-initial-state contract")
     func noMutationBeforeActivate() throws {
         // The core PR-1 invariant: every processor-state knob the audio thread
         // can observe must be set via TapInitialState, not via post-construction
         // calls that race with AudioDeviceStart. We assert this by checking
-        // that no .updateEQSettings / .updateAutoEQProfile / .setAutoEQPreampEnabled
-        // / .updateLoudnessCompensation / .updateLoudnessEqualization is recorded
-        // BEFORE the .activate event in the tap's event log.
-        //
-        // Exercises a realistic config (AutoEQ-capable device with an enabled
-        // selection whose profile is uncached) so applyAutoEQToTap runs
-        // post-activate — proving the engine's fallback path doesn't accidentally
-        // fire before activate.
-        let fix = makeFixture(supportsAutoEQ: true)
-        fix.settings.setAutoEQSelection(
-            for: fix.device.uid,
-            to: AutoEQSelection(profileID: "missing-id", isEnabled: true)
-        )
-        let custom = EQSettings(bandGains: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], isEnabled: true)
-        fix.settings.setEQSettings(custom, for: fix.app.persistenceIdentifier)
+        // that no .updateLoudnessEqualization is recorded BEFORE the .activate
+        // event in the tap's event log.
+        let fix = makeFixture()
         var s = fix.settings.appSettings
-        s.loudnessCompensationEnabled = true
         s.loudnessEqualizationEnabled = true
         fix.settings.updateAppSettings(s)
 
@@ -387,8 +230,7 @@ struct AudioEngineTapInitialStateTests {
 
         for event in tap.events.prefix(activateIndex) {
             switch event {
-            case .updateEQSettings, .updateAutoEQProfile, .setAutoEQPreampEnabled,
-                 .updateLoudnessCompensation, .updateLoudnessEqualization:
+            case .updateLoudnessEqualization:
                 Issue.record("Pre-activate mutation breaks the apply-initial-state contract: \(event)")
             case .activate, .invalidate:
                 break
@@ -396,36 +238,6 @@ struct AudioEngineTapInitialStateTests {
         }
     }
 
-    @Test("Cache-miss AutoEQ: applyAutoEQToTap fires its sync nil-set after activate")
-    func cacheMissTriggersPostActivateNilSet() throws {
-        // Device supports AutoEQ + selection is enabled but profile is missing
-        // from cache → ensureTapExists calls applyAutoEQToTap, which sets the
-        // profile to nil synchronously before kicking off async resolution.
-        // Verifies the engine's fallback path is reached when (and only when)
-        // the synchronous pre-activate lookup misses.
-        let fix = makeFixture(supportsAutoEQ: true)
-        fix.settings.setAutoEQSelection(
-            for: fix.device.uid,
-            to: AutoEQSelection(profileID: "missing-id", isEnabled: true)
-        )
-
-        fix.engine.setDevice(for: fix.app, deviceUID: fix.device.uid)
-
-        let tap = try #require(fix.lastTap())
-        // The first event must still be .activate (apply-initial-state ordering)
-        if case .activate = tap.events.first {
-            // ok
-        } else {
-            Issue.record("activate(initial:) was not first event")
-        }
-        // A post-activate updateAutoEQProfile(nil) must be present from
-        // applyAutoEQToTap's sync nil-set on cache miss.
-        let postActivateAutoEQ = tap.events.dropFirst().compactMap { event -> String?? in
-            if case let .updateAutoEQProfile(id) = event { return Optional(id) }
-            return nil
-        }
-        #expect(postActivateAutoEQ.contains(where: { $0 == nil }))
-    }
 }
 
 // MARK: - Helpers
@@ -456,13 +268,13 @@ struct RecordingProcessTapControllerContractTests {
         let tap = RecordingProcessTapController(app: app, deviceUIDs: ["uid"])
 
         try tap.activate(initial: TapInitialState())
-        tap.updateEQSettings(EQSettings.flat)
-        tap.updateAutoEQProfile(nil)
+        tap.updateLoudnessEqualization(LoudnessEqualizerSettings())
+        tap.invalidate()
 
         #expect(tap.events.count == 3)
         if case .activate = tap.events[0] {} else { Issue.record("expected .activate at 0") }
-        if case .updateEQSettings = tap.events[1] {} else { Issue.record("expected .updateEQSettings at 1") }
-        if case .updateAutoEQProfile = tap.events[2] {} else { Issue.record("expected .updateAutoEQProfile at 2") }
+        if case .updateLoudnessEqualization = tap.events[1] {} else { Issue.record("expected .updateLoudnessEqualization at 1") }
+        if case .invalidate = tap.events[2] {} else { Issue.record("expected .invalidate at 2") }
     }
 
     @Test("Default property values match real controller defaults")
@@ -502,12 +314,7 @@ struct RecordingProcessTapControllerContractTests {
         // initial-state contract by calling the old no-arg overload.
         try tap.activate()
         if case let .activate(snap) = tap.events.first {
-            #expect(snap.autoEQProfileID == nil)
-            #expect(snap.loudnessCompensationEnabled == false)
             #expect(snap.loudnessEqualizerSettings.enabled == false)
-            #expect(snap.autoEQPreampEnabled == false)
-            #expect(snap.eqSettings == EQSettings.flat)
-            #expect(snap.loudnessVolume == 1.0)
         } else {
             Issue.record("activate() did not record an .activate event")
         }

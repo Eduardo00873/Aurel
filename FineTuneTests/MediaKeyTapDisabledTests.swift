@@ -28,7 +28,6 @@ struct MediaKeyTapDisabledTests {
         let engine = AudioEngine(
             permission: AudioRecordingPermission(),
             settingsManager: settings,
-            autoEQProfileManager: AutoEQProfileManager(),
             deviceProvider: deviceMonitor,
             deviceVolumeMonitor: mockVolume,
             startMonitorsAutomatically: false

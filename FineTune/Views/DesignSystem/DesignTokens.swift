@@ -302,31 +302,6 @@ enum DesignTokens {
         /// VU meter muted state
         static let vuMuted: Color = .primary.opacity(0.35)
 
-        // MARK: AutoEQ
-
-        /// AutoEQ empty-state dashed border. Light bumped so the dashed
-        /// outline reads on a translucent panel.
-        static let autoEQEmptyBorder = dynamicColor(
-            name: "autoEQEmptyBorder",
-            light: NSColor.black.withAlphaComponent(0.22),
-            dark: NSColor.white.withAlphaComponent(0.1)
-        )
-
-        /// AutoEQ empty-state icon color. Light made darker so the icon is
-        /// visible on a near-white background.
-        static let autoEQEmptyIcon = dynamicColor(
-            name: "autoEQEmptyIcon",
-            light: NSColor(white: 0.45, alpha: 1.0),
-            dark: NSColor(white: 0.267, alpha: 1.0)
-        )
-
-        /// AutoEQ toggle label text color (Correction / Preamp labels).
-        static let autoEQToggleLabel = dynamicColor(
-            name: "autoEQToggleLabel",
-            light: NSColor.black.withAlphaComponent(0.65),
-            dark: NSColor.white.withAlphaComponent(0.5)
-        )
-
         // MARK: HUD
 
         /// Active dot in Tahoe HUD tick track
@@ -365,15 +340,6 @@ enum DesignTokens {
 
         /// Device picker text
         static let pickerText = Font.system(size: 11, weight: .regular)
-
-        /// EQ frequency labels
-        static let eqLabel = Font.system(size: 9, weight: .medium, design: .monospaced)
-
-        /// AutoEQ card profile name
-        static let cardProfileName = Font.system(size: 12, weight: .semibold)
-
-        /// AutoEQ card source/measuredBy
-        static let cardSource = Font.system(size: 9, weight: .regular)
 
         /// Settings card header (sentence case, 13pt semibold)
         static let cardHeader = Font.system(size: 13, weight: .semibold)

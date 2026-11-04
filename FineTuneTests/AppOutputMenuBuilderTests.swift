@@ -6,8 +6,8 @@ import AppKit
 @Suite("AppOutputMenuBuilder")
 @MainActor
 struct AppOutputMenuBuilderTests {
-    private let speakers = AudioDevice(id: 75, uid: "BuiltInSpeakerDevice", name: "Colunas (MacBook Air)", icon: nil, supportsAutoEQ: false)
-    private let monitor = AudioDevice(id: 82, uid: "VG278-UID", name: "VG278", icon: nil, supportsAutoEQ: false)
+    private let speakers = AudioDevice(id: 75, uid: "BuiltInSpeakerDevice", name: "Colunas (MacBook Air)", icon: nil)
+    private let monitor = AudioDevice(id: 82, uid: "VG278-UID", name: "VG278", icon: nil)
 
     private final class Recorder {
         var followDefaultCount = 0

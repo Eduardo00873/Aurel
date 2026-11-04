@@ -178,8 +178,7 @@ final class AudioDeviceMonitor: AudioDeviceProviding {
                         id: deviceID,
                         uid: uid,
                         name: name,
-                        icon: icon,
-                        supportsAutoEQ: deviceID.supportsAutoEQ()
+                        icon: icon
                     )
                     outputDeviceList.append(device)
                 }
@@ -198,8 +197,7 @@ final class AudioDeviceMonitor: AudioDeviceProviding {
                         id: deviceID,
                         uid: uid,
                         name: name,
-                        icon: icon,
-                        supportsAutoEQ: false
+                        icon: icon
                     )
                     inputDeviceList.append(device)
                 }
