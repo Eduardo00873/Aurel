@@ -28,6 +28,8 @@ Music up, notifications down, the video call exactly where you want it. Aurel gi
 
 - **Per-app volume** — a full-width slider for every app that's playing sound. The level is remembered the next time the app plays.
 - **Per-app mute** — silence one app with a single click and leave the rest alone.
+- **Amplify quiet apps** — boost an app up to 4× (+12 dB) from the small 1× button next to its slider. A soft limiter keeps loud peaks clean.
+- **Level volume** — one switch in Settings evens out loud and quiet moments, like ads that are louder than the video.
 - **System output in one place** — switch between speakers, headphones and displays from the same panel.
 - **Per-app output** — keep music on your speakers and send a call to your headphones. Apps follow the system output by default; a small pin marks any app you route on purpose.
 - **Pinned and hidden apps** — keep favourite apps in the list even when they're quiet, or hide the ones you never want to touch.
@@ -78,7 +80,7 @@ Aurel lives in the menu bar — look for the sound-wave icon.
 
 ## Tips
 
-- **Calls sound quiet in other apps?** During a call, macOS lowers the volume of every other app on the active output. This is system behaviour and happens with or without Aurel. For the best call quality, hide your calling app in Aurel (right-click › Hide).
+- **Other apps get quieter during a call?** While a call is active, macOS lowers every other app on the active output. This is system behaviour and happens with or without Aurel. If something gets too quiet, raise it in Aurel or use Amplify.
 - **Switching outputs often?** Leave apps on **System Default** so they follow the output you pick. Use a fixed output only when you really want an app on a specific device.
 - **Don't run Aurel alongside another per-app volume tool** — both would try to manage the same audio.
 
